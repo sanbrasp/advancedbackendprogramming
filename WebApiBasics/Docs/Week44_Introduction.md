@@ -1,5 +1,13 @@
 # Web API Basics
 
+## Overview
+- [Week 44](#week-44)
+- [Week 45](Week45_InfrastructureArchitecture.md)
+
+---
+
+## Week 44
+
 Goals for this project:
 - [ x ] 1. I can explain what happens (DNS, TCP, HTTP) from the browser asking for a resource until the response arrives
 - [ x ] 2. I can read an HTTP request and response and identify method, URL, headers, body and status code
