@@ -3,12 +3,12 @@
 Goals for this project:
 - [ x ] 1. I can explain what happens (DNS, TCP, HTTP) from the browser asking for a resource until the response arrives
 - [ x ] 2. I can read an HTTP request and response and identify method, URL, headers, body and status code
-- [ ] 3. I can explain at least three REST principles in my own words
-- [ ] 4. I know what safe and idempotent mean and can give an example for GET, POST and DELETE
-- [ ] 5. I can create a controller in ASP.NET Core with GET and POST endpoints
-- [ ] 6. I use 201 Created with CreatedAtAction for POST and 404 NotFound for missing resources
-- [ ] 7. I have tested my endpoints in Swagger UI or Postman
-- [ ] 8. I can read an OpenAPI specification and understand what paths and components/schemas describe
+- [ x ] 3. I can explain at least three REST principles in my own words
+- [ x ] 4. I know what safe and idempotent mean and can give an example for GET, POST and DELETE
+- [ x ] 5. I can create a controller in ASP.NET Core with GET and POST endpoints
+- [ x ] 6. I use 201 Created with CreatedAtAction for POST and 404 NotFound for missing resources
+- [ x ] 7. I have tested my endpoints in Swagger UI or Postman
+- [ x ] 8. I can read an OpenAPI specification and understand what paths and components/schemas describe
 
 ---
 
