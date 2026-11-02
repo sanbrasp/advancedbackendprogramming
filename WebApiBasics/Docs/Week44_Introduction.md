@@ -2,7 +2,16 @@
 
 ## Overview
 - [Week 44](#week-44)
-- [Week 45](Week45_InfrastructureArchitecture.md)
+    - [What happens when a browser asks for a resource?](#1-what-happens-when-a-browser-asks-for-a-resource)
+    - [HTTP request and response](#2-http-request-and-response)
+    - [REST principles](#3-rest-principles)
+    - [Safe and Idempotent](#4-safe-and-idempotent)
+    - [Create a controller in ASP.NET Core](#5-create-a-controller-in-aspnet-core)
+    - [Use 201 Created with CreatedAtAction and 404 NotFound](#6-use-201-created-with-createdataction-and-404-notfound)
+    - [Test endpoints in Swagger UI or Postman](#7-test-endpoints-in-swagger-ui-or-postman)
+    - [Read an OpenAPI specification](#8-read-an-openapi-specification)
+    - [Sources](#sources)
+- [Week 45 (separate document)](Week45_InfrastructureArchitecture.md)
 
 ---
 
