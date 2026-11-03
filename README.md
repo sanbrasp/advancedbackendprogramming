@@ -4,6 +4,19 @@ Projects, notes, code and resources for the Advanced Backend Programming course 
 
 ---
 
+## Solution Structure
+
+```text
+AdvancedProgrammingSolution/
+├── README.md               Solution README
+├── WebApiBasics/           Week 44 goals
+│   └── README.md           Web API Basics README
+└── HelpDesk.Api/           Week 45 goals
+    └── README.ms           Helpdesk API README
+```
+
+---
+
 ## Tech Stack
 
 | Technology   | Description                                          |
@@ -19,7 +32,14 @@ Projects, notes, code and resources for the Advanced Backend Programming course 
 
 ## Build and run
 
+**Week 44 Project**  
 ```bash
 dotnet build
 dotnet run --project WebApiBasics
+```
+
+**Week 45 Project**  
+```bash
+dotnet build
+dotnet run --project Helpdesk.Api
 ```
