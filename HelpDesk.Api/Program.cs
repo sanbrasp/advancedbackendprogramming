@@ -24,6 +24,23 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/openapi/v1.json", "v1"));
 }
 
+app.Use(async (context, next) =>
+{
+    Console.WriteLine($"A in {context.Request.Path}");
+    
+    await next.Invoke(context);
+    
+    Console.WriteLine("A out");
+});
+app.Use(async (context, next) =>
+{
+    Console.WriteLine("B in");
+
+    await next.Invoke(context);
+
+    Console.WriteLine("B out");
+});
+
 app.UseExceptionHandler("/error");
 
 app.UseHttpsRedirection();
