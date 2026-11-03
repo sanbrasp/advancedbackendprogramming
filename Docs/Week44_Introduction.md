@@ -1,5 +1,7 @@
 # Web API Basics
 
+Week 44 notes
+
 ---
 
 ## Overview
@@ -15,12 +17,14 @@
     - [Code Written for Week 44](#code-related-to-week-44)
     - [Sources](#sources)
 - [Week 45 (separate document)](Week45_InfrastructureArchitecture.md)
+- [Sources](#sources)
 
 ---
 
 ## Week 44
 
-Goals for this project:
+Goals for week 44:
+
 - [ x ] 1. I can explain what happens (DNS, TCP, HTTP) from the browser asking for a resource until the response arrives
 - [ x ] 2. I can read an HTTP request and response and identify method, URL, headers, body and status code
 - [ x ] 3. I can explain at least three REST principles in my own words
