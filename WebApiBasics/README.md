@@ -81,7 +81,7 @@ flowchart LR
 - ~~`ConcurrentDictionary` is used because the store is static and shared between requests~~
 - The controller depends on `IBookRepository`, and `Program.cs` registers `InMemoryBookRepository` as a singleton
 - `ConcurrentDictionary` is still needed because that single instance is shared by all requests at the same time
-  (also used for manual testing)
+  (and for thread-safety)
 
 ---
 
