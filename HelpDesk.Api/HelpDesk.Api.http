@@ -1,6 +1,6 @@
-@HelpDesk.Api_HostAddress = http://localhost:5178
+@hody = http://localhost:5178
 
-GET {{HelpDesk.Api_HostAddress}}/weatherforecast/
+GET {{host}}/*nothing here yet*/
 Accept: application/json
 
 ###
