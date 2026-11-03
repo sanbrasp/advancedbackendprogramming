@@ -378,6 +378,8 @@ How to read it:
 - `Controllers/BooksController.cs`
 - `Controlers/ErrorController.cs`
 - `Records/BookRecord.cs`
+- `Data/InMemoryBookRepository`
+- `Interfaces/IBookRepository`
 
 ## Sources
 
