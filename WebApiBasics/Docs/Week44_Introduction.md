@@ -79,13 +79,13 @@ Not every message has a body. GET usually does not. POST, PUT, nad PATCH request
 
 **Status codes**  
 
-| Code | Meaning | Typical use |
-|------|----------|-------------|
-| 200 OK | Success, body has the result | GET |
-| 201 Created | Resource created, Location header points to it| POST |
-| 204 No Content | Success, nothing to return | PUT, DELETE |
-| 400 Bad Request | The client sent invalid data | POST, PUT |
-| 404 Not Found | The resource does not exist | GET, PUT, DELETE |
+| Code            | Meaning                                        | Typical use      |
+|-----------------|------------------------------------------------|------------------|
+| 200 OK          | Success, body has the result                   | GET              |
+| 201 Created     | Resource created, Location header points to it | POST             |
+| 204 No Content  | Success, nothing to return                     | PUT, DELETE      |
+| 400 Bad Request | The client sent invalid data                   | POST, PUT        |
+| 404 Not Found   | The resource does not exist                    | GET, PUT, DELETE |
 
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages
 
@@ -93,14 +93,14 @@ https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages
 
 ## 3. REST principles
 
-| Principle | In words | Example |
-|-----------|-----------|---------|
-| Resources with URIs | An API is built around "things". Each "thing" has its own address. | `/orders/1` (one order), `/orders` (collection) |
-| Uniform Interface | Standard HTTP methods carry the action, so the URL needs no verbs. | `Post /orders`, not `create-order`  |
-| Stateless Request | Each request carries everything the server needs. The server remembers nothing between requests. | Requests can arrive in any order, and any server instance can answer |
-| Representations | The client gets a representation of the resource, usually JSON, not the database row. | `GET /orders/1` returns `{"orderId:"1, "quantity":1}` |
-| HyperMedia (HATEOAS) | Responses include links to related sources and actions. | An order response with a link to its customer. |
-| Platform independence and loose coupling | Any client can call the API, and client and server can change independently. | Standard HTTP plus JSON |
+| Principle                                | In words                                                                                         | Example                                                              |
+|------------------------------------------|--------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| Resources with URIs                      | An API is built around "things". Each "thing" has its own address.                               | `/orders/1` (one order), `/orders` (collection)                      |
+| Uniform Interface                        | Standard HTTP methods carry the action, so the URL needs no verbs.                               | `Post /orders`, not `create-order`                                   |
+| Stateless Request                        | Each request carries everything the server needs. The server remembers nothing between requests. | Requests can arrive in any order, and any server instance can answer |
+| Representations                          | The client gets a representation of the resource, usually JSON, not the database row.            | `GET /orders/1` returns `{"orderId:"1, "quantity":1}`                |
+| HyperMedia (HATEOAS)                     | Responses include links to related sources and actions.                                          | An order response with a link to its customer.                       |
+| Platform independence and loose coupling | Any client can call the API, and client and server can change independently.                     | Standard HTTP plus JSON                                              |
 
 Use nouns, not verbs. Use plural nouns for collections (`/customers`, `customers/5`). Keep URIs simple. 
 No deeper than collection/item/collection.
@@ -152,15 +152,15 @@ if (app.Environment.IsDevelopment())
 AddControllers registers the controller service.  
 MapControllers connects the controller's routes to the app.
 
-| Piece | What it does |
-| ----- | ------------ |
-| `: ControllerBase` | The base class for all controllers in ASP.NET Core. |
-|`[ApiController] | Marks the class as an API controller and switches on API-specific behavior |
-| `[Route("api/[controller]")]` | The base URL. [controller] becomes the class name without "Controller", so `BooksController` gives `/api/books`. |
-| `[HttpGet]` | This method answers `GET /api/books`. |
-| `[HttpGet("{id}")]` | This method answers `GET /api/books/1`. The id in the url arrives in the method parameter names `id`. |
-| `[HttpPost]` | Answers `POST  /api/books`. The object comes from the request body. |
-| `ActionResult<T>` | Return type. A returned object is serialized to JSON and sent as 200 OK. `ActionResult` can also carry other status codes. |
+| Piece                         | What it does                                                                                                               |
+|-------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| `: ControllerBase`            | The base class for all controllers in ASP.NET Core.                                                                        |
+| `[ApiController]              | Marks the class as an API controller and switches on API-specific behavior                                                 |
+| `[Route("api/[controller]")]` | The base URL. [controller] becomes the class name without "Controller", so `BooksController` gives `/api/books`.           |
+| `[HttpGet]`                   | This method answers `GET /api/books`.                                                                                      |
+| `[HttpGet("{id}")]`           | This method answers `GET /api/books/1`. The id in the url arrives in the method parameter names `id`.                      |
+| `[HttpPost]`                  | Answers `POST  /api/books`. The object comes from the request body.                                                        |
+| `ActionResult<T>`             | Return type. A returned object is serialized to JSON and sent as 200 OK. `ActionResult` can also carry other status codes. |
 
 ```csharp
 public record Book(int Id, string Title);
@@ -227,11 +227,11 @@ public ActionResult<Book> Create(Book book)
 }
 ```
 
-| Argument | Role |
-| -------- | ---- |
-| `nameof(GetById)` | The name of the action method that can retrieve the newly created resource |
-| `new { id = book.Id }` | The route values needed to construct the URL for the new resource |
-| `book` | The object to include in the response body |
+| Argument               | Role                                                                       |
+|------------------------|----------------------------------------------------------------------------|
+| `nameof(GetById)`      | The name of the action method that can retrieve the newly created resource |
+| `new { id = book.Id }` | The route values needed to construct the URL for the new resource          |
+| `book`                 | The object to include in the response body                                 |
 
 https://learn.microsoft.com/en-us/aspnet/core/tutorials/first-web-api  
 https://learn.microsoft.com/en-us/azure/architecture/best-practices/api-design  
