@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using WebApiBasics.Data;
+using WebApiBasics.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +12,9 @@ builder.Services.AddControllers()
 builder.Services.AddOpenApi();
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.NumberHandling = JsonNumberHandling.Strict);
+builder.Services.AddSingleton<IBookRepository, InMemoryBookRepository>();
+
+// Build the app
 
 var app = builder.Build();
 
