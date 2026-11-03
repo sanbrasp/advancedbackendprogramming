@@ -1,5 +1,7 @@
 # Web API Basics
 
+---
+
 ## Overview
 - [Week 44](#week-44)
     - [What happens when a browser asks for a resource?](#1-what-happens-when-a-browser-asks-for-a-resource)
@@ -10,6 +12,7 @@
     - [Use 201 Created with CreatedAtAction and 404 NotFound](#6-use-201-created-with-createdataction-and-404-notfound)
     - [Test endpoints in Swagger UI or Postman](#7-test-endpoints-in-swagger-ui-or-postman)
     - [Read an OpenAPI specification](#8-read-an-openapi-specification)
+    - [Code Written for Week 44](#code-related-to-week-44)
     - [Sources](#sources)
 - [Week 45 (separate document)](Week45_InfrastructureArchitecture.md)
 
@@ -370,6 +373,11 @@ How to read it:
 
 
 ---
+
+## Code related to Week 44
+- `Controllers/BooksController.cs`
+- `Controlers/ErrorController.cs`
+- `Records/BookRecord.cs`
 
 ## Sources
 
