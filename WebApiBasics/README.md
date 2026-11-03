@@ -25,14 +25,14 @@ It is a work in progress.
 
 Base route: `api/books`. Books are identified by their `id`.
 
-| Method | Path | Purpose | Success | Errors |
-|---------|------|-------|-----------|-------|
-| GET | `/api/books` | List all books. | 200 | N/A |
-| GET | `/api/books/{id}` | Get one book. | 200 | 404 |
-| POST | `/api/books` | Create a book. | 201 + `Location` header | 409 (id exists) |
-| PUT | `/api/books/{id}` | Replace a book (update). | 200 | 404, 409 |
-| DELETE | `/api/books/{id}` | Delete a book. | 200 | 404 |
-| any | `/error` | Exception handler target, not for clients. | 500 + problem json | N/A |
+| Method | Path              | Purpose                                    | Success                 | Errors          |
+|--------|-------------------|--------------------------------------------|-------------------------|-----------------|
+| GET    | `/api/books`      | List all books.                            | 200                     | N/A             |
+| GET    | `/api/books/{id}` | Get one book.                              | 200                     | 404             |
+| POST   | `/api/books`      | Create a book.                             | 201 + `Location` header | 409 (id exists) |
+| PUT    | `/api/books/{id}` | Replace a book (update).                   | 200                     | 404             |
+| DELETE | `/api/books/{id}` | Delete a book.                             | 200                     | 404             |
+| any    | `/error`          | Exception handler target, not for clients. | 500 + problem json      | N/A             |
 
 - The route id always wins over an id in the request body on `PUT`
 - Unhandled exceptions return a short `application/problem+json` 500 response without a stack trace
@@ -46,8 +46,11 @@ flowchart LR
     C[Client] --> E[Exception handler]
     E --> R[Routing]
     R --> B[BooksController]
-    B --> D[ConcurrentDictionary of BookRecord]
-    D --> B
+    B --> I[IBookRepository]
+    I --> M[InMemoryBookRepository]
+    M --> D[ConcurrentDictionary of BookRecord]
+    D --> M
+    M --> B
     B --> C
     E -. unhandled exception .-> X["/error (ErrorController)"]
     X --> C
@@ -55,7 +58,10 @@ flowchart LR
 
 - The exception handler is the first middleware in the pipeline
 - Data lives in memory only and resets when app restarts
-- `ConcurrentDictionary` is used because the store is static and shared between requests
+- ~~`ConcurrentDictionary` is used because the store is static and shared between requests~~
+- The controller depends on `IBookRepository`, and `Program.cs` registers `InMemoryBookRepository` as a singleton
+- `ConcurrentDictionary` is still needed because that single instance is shared by all requests at the same time
+  (also used for manual testing)
 
 ---
 
