@@ -43,3 +43,13 @@ dotnet run --project WebApiBasics
 dotnet build
 dotnet run --project Helpdesk.Api
 ```
+
+---
+
+## Document Links
+- [Week 44](Docs/Week44_Introduction.md)
+  - [WebApiBasics README](WebApiBasics/README.md)
+- [Week 45](Docs/Week45_InfrastructureArchitecture.md)
+  - [HelpdeskAPI README](HelpDesk.Api/README.md)
+
+---
