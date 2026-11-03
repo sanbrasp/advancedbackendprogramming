@@ -3,5 +3,6 @@
     <File Path=".gitignore" />
     <File Path="README.md" />
   </Folder>
+  <Project Path="HelpDesk.Api/HelpDesk.Api.csproj" />
   <Project Path="WebApiBasics/WebApiBasics.csproj" />
 </Solution>
