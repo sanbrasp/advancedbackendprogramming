@@ -8,9 +8,9 @@ A practice project for Web API development using ASP.NET Core.
 
 ##  Overview
 - [About](#about)
+- [Project Structure](#project-structure)
 - [Endpoints](#endpoints)
 - [Data Flow](#data-flow)
-- [Project Structure](#project-structure)
 - [Sources](#sources)
 
 ## About
@@ -20,6 +20,24 @@ in the Advanced Backend Programming course @ Gokstad Akademiet. The project is a
 simple Web API that demonstrates the basics of building RESTful APIs using ASP.NET Core.
 
 It is a work in progress.
+
+---
+
+## Project Structure
+
+```text
+WebApiBasics/
+├── Controllers/
+│   ├── BooksController.cs           CRUD endpoints for books
+│   └── ErrorController.cs           Target of UseExceptionHandler("/error")
+├── Data/
+│   └── InMemoryBookRepository.cs    In memory book repository, implements IBookRepository
+├── Interfaces/
+│   └── IBookRepository.cs           Contract for book repository
+├── Records/
+│   └── BookRecord.cs                Book data model (record)
+└── Program.cs                       Service registration and middleware pipeline
+```
 
 ---
 
@@ -64,24 +82,6 @@ flowchart LR
 - The controller depends on `IBookRepository`, and `Program.cs` registers `InMemoryBookRepository` as a singleton
 - `ConcurrentDictionary` is still needed because that single instance is shared by all requests at the same time
   (also used for manual testing)
-
----
-
-## Project Structure
-
-```text
-WebApiBasics/
-├── Controllers/
-│   ├── BooksController.cs           CRUD endpoints for books
-│   └── ErrorController.cs           Target of UseExceptionHandler("/error")
-├── Data/
-│   └── InMemoryBookRepository.cs    In memory book repository, implements IBookRepository
-├── Interfaces/
-│   └── IBookRepository.cs           Contract for book repository
-├── Records/
-│   └── BookRecord.cs                Book data model (record)
-└── Program.cs                       Service registration and middleware pipeline
-```
 
 ---
 
