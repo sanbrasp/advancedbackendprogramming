@@ -24,6 +24,7 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/openapi/v1.json", "v1"));
 }
 
+// For testing
 app.Use(async (context, next) =>
 {
     Console.WriteLine($"A in {context.Request.Path}");
@@ -40,6 +41,7 @@ app.Use(async (context, next) =>
 
     Console.WriteLine("B out");
 });
+// Above, for testing
 
 app.UseExceptionHandler("/error");
 
