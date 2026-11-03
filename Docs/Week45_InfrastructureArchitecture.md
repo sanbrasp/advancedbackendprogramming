@@ -60,6 +60,45 @@ It can't catch exceptions from middleware that is registered before it.
 
 ### Short Circuiting And Correct Use of the Next Delegate
 
+Tested in `Program.cs`: 
+
+```csharp
+app.Use(async (context, next) =>
+{
+    Console.WriteLine($"A in {context.Request.Path}");
+    
+    await next.Invoke(context);
+    
+    Console.WriteLine("A out");
+});
+app.Use(async (context, next) =>
+{
+    Console.WriteLine($"B in {context.Request.Path}");
+
+    await next.Invoke(context);
+
+    Console.WriteLine("B out");
+});
+```
+
+Output:
+
+```text
+A in /api/tickets
+B in /api/tickets
+B out
+A out
+A in /favicon.ico
+B in /favicon.ico
+B out
+A out
+```
+
+- When A reaches `await next(...)`, it pauses and waits.  
+- B runs inside that wait. Then B pauses when it reaches `await next(...)`, while the controller runs.  
+- When the controller finishes, the code resumes in reverse:  
+- B continues after its `next` (B out)., and only then can A continue (A out).
+
 ---
 
 ### Custom Middleware Class
