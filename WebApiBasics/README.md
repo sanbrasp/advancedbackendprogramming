@@ -64,16 +64,18 @@ flowchart LR
 ```text
 WebApiBasics/
 ├── Controllers/
-│   ├── BooksController.cs   CRUD endpoints for books
-│   └── ErrorController.cs   Target of UseExceptionHandler("/error")
+│   ├── BooksController.cs           CRUD endpoints for books
+│   └── ErrorController.cs           Target of UseExceptionHandler("/error")
+├── Data/
+│   └── InMemoryBookRepository.cs    In memory book repository, implements IBookRepository
+├── Interfaces/
+│   └── IBookRepository.cs           Contract for book repository
 ├── Records/
-│   └── BookRecord.cs        Book data model (record)
-└── Program.cs               Service registration and middleware pipeline
+│   └── BookRecord.cs                Book data model (record)
+└── Program.cs                       Service registration and middleware pipeline
 ```
 
 ---
-
-## Sources
 
 ## Sources
 
