@@ -3,7 +3,7 @@
 ---
 
 ## Overview
-- [Week 44](Week44_Introduction.md)
+- [Week 44 (separate document)](Week44_Introduction.md)
 - [Week 45](#week-45)
 
 ---
