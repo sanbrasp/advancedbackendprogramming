@@ -34,7 +34,7 @@ app.Use(async (context, next) =>
 });
 app.Use(async (context, next) =>
 {
-    Console.WriteLine("B in");
+    Console.WriteLine($"B in {context.Request.Path}");
 
     await next.Invoke(context);
 
