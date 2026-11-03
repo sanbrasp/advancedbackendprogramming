@@ -1,5 +1,5 @@
-using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Mvc;
+using WebApiBasics.Interfaces;
 using WebApiBasics.Records;
 
 namespace WebApiBasics.Controllers
@@ -8,22 +8,23 @@ namespace WebApiBasics.Controllers
     [Route("api/[controller]")]
     public class BooksController : ControllerBase
     {
-        private static readonly ConcurrentDictionary<int, BookRecord> _books = new()
+        private readonly IBookRepository _books;
+        
+        public BooksController(IBookRepository repository)
         {
-            [1] = new(1, "Sandra", "A frog's life", "A tale of frogs", 1987)
-        };
-
+            _books = repository;
+        }
         
         [HttpGet]
         public ActionResult<IEnumerable<BookRecord>> GetAll()
         {
-            return Ok(_books.Values);
+            return Ok(_books.GetAll());
         }
 
         [HttpGet("{id}")]
         public ActionResult<BookRecord> GetById(int id)
         {
-            if (!_books.TryGetValue(id, out var book))
+            if (!_books.TryGet(id, out var book))
             {
                 return NotFound();
             }
@@ -34,7 +35,7 @@ namespace WebApiBasics.Controllers
         [HttpPost]
         public ActionResult<BookRecord> Create(BookRecord book)
         {
-            if (!_books.TryAdd(book.Id, book))
+            if (!_books.TryAdd(book))
             {
                 return Conflict();
             }
@@ -46,18 +47,11 @@ namespace WebApiBasics.Controllers
         }
 
         [HttpPut("{id}")]
-        public ActionResult<BookRecord> Edit(int id, BookRecord book)
+        public ActionResult<BookRecord> Update(int id, BookRecord book)
         {
-            var exists =  _books.TryGetValue(id, out var existing);
-            if (!exists)
+            if (!_books.TryUpdate(id, book, out var updated))
             {
                 return NotFound();
-            }
-            var updated = book with { Id = id };
-
-            if (!_books.TryUpdate(id, updated, existing!))
-            {
-                return Conflict();
             }
             return Ok(updated);
         }
