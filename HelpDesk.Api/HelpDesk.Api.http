@@ -18,3 +18,18 @@ X-Api-Key: anything
 GET {{host}}/api/get-a-free-iphone
 Accept: application/json
 X-Api-Key: anything
+
+### GET by ID 0 (400)
+GET {{host}}/api/tickets/0
+Accept: application/json
+X-Api-Key: anything
+
+### GET by ID -1 (400)
+GET {{host}}/api/tickets/-1
+Accept: application/json
+X-Api-Key: anything
+
+### GET by ID 1 (200)
+GET {{host}}/api/tickets/1
+Accept: application/json
+X-Api-Key: anything
