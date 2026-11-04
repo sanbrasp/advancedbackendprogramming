@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using HelpDesk.Api.Data;
+using HelpDesk.Api.Filters;
 using HelpDesk.Api.Interfaces;
 using HelpDesk.Api.Middleware;
 
@@ -14,6 +15,7 @@ builder.Services.AddOpenApi();
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.NumberHandling = JsonNumberHandling.Strict);
 builder.Services.AddSingleton<ITicketRepository, InMemoryTicketRepositoryRepository>();
+builder.Services.AddScoped<AuditActionFilter>();
 
 // Build the app
 var app = builder.Build();
