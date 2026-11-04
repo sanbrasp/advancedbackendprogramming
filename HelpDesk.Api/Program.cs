@@ -31,6 +31,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseExceptionHandler("/error");
 
+app.UseRequestTiming();
+
 app.UseMiddleware<ApiKeyMiddleware>();
 
 app.UseHttpsRedirection();
