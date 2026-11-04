@@ -1,3 +1,4 @@
+using HelpDesk.Api.Filters;
 using HelpDesk.Api.Interfaces;
 using HelpDesk.Api.Records;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ namespace HelpDesk.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[ServiceFilter(typeof(AuditActionFilter))]
 public class TicketsController : ControllerBase
 {
     private readonly ITicketRepository _ticketsRepository;
