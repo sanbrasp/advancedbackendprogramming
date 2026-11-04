@@ -355,12 +355,12 @@ internal class AuditActionFilter : IActionFilter
 public class TicketsController : ControllerBase
 ```
 
-When it put on the controller, every ticket action gets audited: list, get, create, read, update, delete.  
+When it is put on the controller, every ticket action gets audited: create, read, update, delete.  
 If you only wanted to audit Delete, you would only put it on `Delete`.  
 Putting it into the options globally would make every action in the app audited:  
-`AddControllers(O => o.Filters.AddService<AuditActionFilter>())`.
+`AddControllers(o => o.Filters.AddService<AuditActionFilter>())`.
 
-The contrast here is that middleware runs for every request, including `/openapi/v1,json`, unknown URLs, 
+The contrast here is that middleware runs for every request, including `/openapi/v1.json`, unknown URLs, 
 and 401s. A filter only runs for the actions you attach it to, and only after a controller action has been 
 selected.
 
@@ -382,7 +382,81 @@ GET /api/Tickets 200 21 ms
 
 The timing comes last because `RequestTimingMiddleware` wraps the whole pipeline, including the filters.
 
-[Filters in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0)  
+The same goes for `ValidateIdFilter`.  
+Registered as scoped service in the DI container in `Program.cs`.  
+Applied to `TicketsController.GetById`.  
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+
+namespace HelpDesk.Api.Filters;
+
+internal class ValidateIdFilter : IActionFilter
+{
+    public void OnActionExecuting(ActionExecutingContext context)
+    {
+        if (context.ActionArguments.TryGetValue("id", out var value) && value is int id && id <= 0)
+        {
+            context.Result = new BadRequestObjectResult("ID must be greater than 0");
+        }
+    }
+
+    public void OnActionExecuted(ActionExecutedContext context)
+    {
+        
+    }
+}
+```
+
+```csharp
+[HttpGet("{id}")]
+    [ServiceFilter(typeof(ValidateIdFilter))]
+    public ActionResult<TicketRecord> GetById(int id)
+```
+
+```csharp
+builder.Services.AddScoped<ValidateIdFilter>();
+```
+
+**Console output**  
+```terminaloutput
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:02:34
+==After==
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:02:34
+GET /api/tickets/0 400 9 ms
+==Before==
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:03:27
+==After==
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:03:27
+GET /api/tickets/1 200 3 ms
+==Before==
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:04:31
+==After==
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:04:31
+GET /api/tickets/-1 400 1 ms
+```
+
+Response body says: "ID must be greater than 0". The action itself never ran.
+
+Setting `context.Result` in `OnActionExecuting` is what short-circuits the filter pipeline.
+The controller-level `AuditActionFilter` runs first, then the action-level `ValidateIdFilter`
+sets the result. The action is skipped, but the audit filter still gets its `OnActionExecuted`
+call, so rejected requests are audited too. Filter order is global, then controller, then action.
+
+`[ServiceFilter]` asks the DI container for the filter instead of creating it, so the filter
+must be registered. A plain attribute is created by .NET itself and can't take services in
+its constructor.
+
+
+[Filters in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-10.0)  
+
+| | Middleware | Filter |
+|--------------|------|---------|
+| Runs for | Every request | Only requests that reach a controller action |
+| Sees | `HttpContext` (request and response) | Action info: name, arguments, result |
+| Set up | `Program.cs` pipeline, order matters | Attribute on action or controller, or globally |
+| Good for | Exception handling, API key, timing | Validating arguments, auditing actions |
 
 ---
 
