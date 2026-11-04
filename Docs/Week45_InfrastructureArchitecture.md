@@ -63,6 +63,8 @@ identity that authentication produces.
 
 [Handle errors in ASP.NET Core (Microsoft)](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling?view=aspnetcore-10.0)
 
+[🏠 To top](#overview)
+
 ---
 
 ### Short Circuiting And Correct Use of the Next Delegate
@@ -155,6 +157,8 @@ request on, because then the endpoint never runs.
 
 [Routing in ASP.NET Core (Microsoft)](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-10.0)  
 [ASP.NET Core Middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-10.0)  
+
+[🏠 To top](#overview)
 
 ---
 
@@ -321,6 +325,8 @@ GET /api/get-a-free-iphone 404 0 ms
 [Use generated openapi documents](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/using-openapi-documents)  
 [OpenApi basic structure](https://docs.bump.sh/openapi/v3.2/understanding-structure/basic-structure/)  
 
+[🏠 To top](#overview)
+
 ---
 
 ### Distinguish Between Middleware and Filters
@@ -449,15 +455,16 @@ call, so rejected requests are audited too. Filter order is global, then control
 must be registered. A plain attribute is created by .NET itself and can't take services in
 its constructor.
 
-
-[Filters in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-10.0)  
-
 | | Middleware | Filter |
 |--------------|------|---------|
 | Runs for | Every request | Only requests that reach a controller action |
 | Sees | `HttpContext` (request and response) | Action info: name, arguments, result |
 | Set up | `Program.cs` pipeline, order matters | Attribute on action or controller, or globally |
 | Good for | Exception handling, API key, timing | Validating arguments, auditing actions |
+
+[Filters in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-10.0)  
+
+[🏠 To top](#overview)
 
 ---
 
@@ -478,6 +485,9 @@ builder.Services.AddSingleton<ITicketRepository, InMemoryTicketRepository>();
 Singleton chosen because the data needs to live inside the repo instance. Transient or scoped would 
 create a new, empty store every time, and the tickets disappear.  
 Because every request shares the one instance, it uses a `ConcurrentDictionary`.
+
+
+[🏠 To top](#overview)
 
 ---
 
@@ -502,22 +512,34 @@ pattern, for example calling `GetService` to fetch a service yourself.
 
 [Dependency injection in ASP.NET Core (Microsoft)](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-10.0)
 
+[🏠 To top](#overview)
+
 ---
 
 ### Set up Options Pattern With Validation
+
+[🏠 To top](#overview)
 
 ---
 
 ### Why Secrets Don't Belong in appsettings.json
 
+[🏠 To top](#overview)
+
 ---
 
 ### Responsibility of Each Layer / Dependency Diagram
+
+[🏠 To top](#overview)
 
 ---
 
 ### Compare Technical Layering and Feature-Based Structure
 
+[🏠 To top](#overview)
+
 ---
 
 ## Sources
+
+[🏠 To top](#overview)
