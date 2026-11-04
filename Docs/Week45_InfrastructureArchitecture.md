@@ -130,9 +130,77 @@ app.Use(async (context, next) =>
 });
 ```
 
+[Routing in ASP.NET Core (Microsoft)](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-10.0)
+
 ---
 
 ### Custom Middleware Class
+
+For this, I wrote the custom middleware `ApiKeyMiddleware`.  
+It needs a public constructor that takes a `RequestDelegate` parameter, and a public 
+`Invoke` or `InvokeAsync` method that returns `Task` with `HttpContext` parameter.
+
+It is important that you don't have typos in the `Invoke` method, because the framework will look 
+for the method at runtime, and will throw an exception at you.
+
+```csharp
+namespace HelpDesk.Api.Middleware;
+
+internal class ApiKeyMiddleware
+{
+    private readonly RequestDelegate _next;
+    
+    public ApiKeyMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext httpContext)
+    {
+        if (!httpContext.Request.Headers.ContainsKey("X-API-Key"))
+        {
+            httpContext.Response.StatusCode = 401;
+            return;
+        }
+        await _next.Invoke(httpContext);
+    }
+}
+```
+
+I then registered it in `Program.cs` with the rest of the middleware (but after Exception Handler), 
+like this: `app.UseMiddleware<ApiKeyMiddleware>();`.
+
+It performs the same check from the short-circuit test.  
+
+To check that it works, I used the `HelpDesk.Api.http` file, like this:
+
+```http request
+@host = https://localhost:7124
+
+### GET Without API Key (401)
+GET {{host}}/api/tickets/
+Accept: application/json
+
+### GET With API Key (200)
+GET {{host}}/api/Tickets
+Accept: application/json
+X-Api-Key: anything
+
+```
+
+**Results With and Without API Key**  
+
+![run http requests](../Images/httprequests_helpdeskapi.png)  
+
+![request body](../Images/httprequests_helpdeskapi_body.png)
+
+This works because the check in the middleware check (`ContainsKey` and `Response.StatusCode`)  
+is no longer `401` when an API Key has been supplied. The code therefore moves on to the `next.Invoke(httpContext)` step, 
+and the rest of the middleware runs.
+
+
+[Write custom ASP.NET Core middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/write?view=aspnetcore-10.0)  
+[Rider HTTP Request Syntax](https://www.jetbrains.com/help/rider/Exploring_HTTP_Syntax.html)   
 
 ---
 
