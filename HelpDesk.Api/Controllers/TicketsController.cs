@@ -25,6 +25,7 @@ public class TicketsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [ServiceFilter(typeof(ValidateIdFilter))]
     public ActionResult<TicketRecord> GetById(int id)
     {
         if (!_ticketsRepository.TryGet(id, out var ticket))
