@@ -1,6 +1,10 @@
-@hody = http://localhost:5178
+@host = https://localhost:7124
 
-GET {{host}}/*nothing here yet*/
+### GET Without API Key (401)
+GET {{host}}/api/tickets/
 Accept: application/json
 
-###
+### GET With API Key (200)
+GET {{host}}/api/Tickets
+Accept: application/json
+X-Api-Key: anything
