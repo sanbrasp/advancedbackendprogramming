@@ -26,9 +26,9 @@ Week 45 notes
 Learning goals for week 45:
 
 Goals for this project:
-- [ ] 1 I can explain the request pipeline and what the order of middleware means
-- [ ] 2 I can explain short-circuiting and the correct use of the next delegate
-- [ ] 3 I can write a custom middleware class
+- [ x ] 1 I can explain the request pipeline and what the order of middleware means
+- [ x ] 2 I can explain short-circuiting and the correct use of the next delegate
+- [ x ] 3 I can write a custom middleware class
 - [ ] 4 I can distinguish between middleware and filters and explain their use cases
 - [ ] 5 I can register services in the DI container with the right lifetime
 - [ ] 6 I can use constructor injection and explain why Service Locator is an anti-pattern
@@ -52,6 +52,13 @@ app.UseExceptionHandler("/error");
 
 When it is first, it wraps everything that comes after it and can catch any exceptions from them.  
 It can't catch exceptions from middleware that is registered before it.
+
+For three middleware A, B, C and an endpoint, the order is:
+```terminaloutput
+A in, B in, C in, endpoint, C out, B out, A out.
+```
+Authentication goes before authorization, because authorization needs the
+identity that authentication produces.
 
 
 [Handle errors in ASP.NET Core (Microsoft)](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling?view=aspnetcore-10.0)
@@ -97,7 +104,7 @@ A out
 - When A reaches `await next(...)`, it pauses and waits.  
 - B runs inside that wait. Then B pauses when it reaches `await next(...)`, while the controller runs.  
 - When the controller finishes, the code resumes in reverse:  
-- B continues after its `next` (B out)., and only then can A continue (A out).
+- B continues after its `next` (B out), and only then can A continue (A out).
 
 **Full middleware and short-circuit testing code with comments:**  
 
@@ -130,7 +137,24 @@ app.Use(async (context, next) =>
 });
 ```
 
-[Routing in ASP.NET Core (Microsoft)](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-10.0)
+When the API key is missing, C returns without calling `next`:
+
+```terminaloutput
+A in /api/tickets
+B in /api/tickets
+C in
+B out
+A out
+```
+
+There is no "C out", and the controller never runs.
+
+Not calling `next` is correct when the middleware answers the request itself,
+for example a failed key check. It is a bug in middleware that should pass the
+request on, because then the endpoint never runs.
+
+[Routing in ASP.NET Core (Microsoft)](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-10.0)  
+[ASP.NET Core Middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-10.0)  
 
 ---
 
@@ -168,11 +192,13 @@ internal class ApiKeyMiddleware
 ```
 
 I then registered it in `Program.cs` with the rest of the middleware (but after Exception Handler), 
-like this: `app.UseMiddleware<ApiKeyMiddleware>();`.
+like this: 
 
-It performs the same check from the short-circuit test.  
+```csharp
+app.UseMiddleware<ApiKeyMiddleware>();
+```
 
-To check that it works, I used the `HelpDesk.Api.http` file, like this:
+**Http requests**  
 
 ```http request
 @host = https://localhost:7124
@@ -194,17 +220,114 @@ X-Api-Key: anything
 
 ![request body](../Images/httprequests_helpdeskapi_body.png)
 
-This works because the check in the middleware check (`ContainsKey` and `Response.StatusCode`)  
-is no longer `401` when an API Key has been supplied. The code therefore moves on to the `next.Invoke(httpContext)` step, 
-and the rest of the middleware runs.
+This works because the check in the middleware (`ContainsKey` and `Response.StatusCode`)
+only stops the request when the header is missing. When an API key is supplied, the
+request continues down the pipeline to the controller.
 
+I also wrote `RequestTimingMiddleware` and an extension for it: `RequestTimingMiddlewareExtension`.
+
+```csharp
+using System.Diagnostics;
+
+namespace HelpDesk.Api.Middleware;
+
+internal class RequestTimingMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public RequestTimingMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        await _next(context);
+
+        var statusCode = context.Response.StatusCode;
+
+        Console.WriteLine(
+            $"{context.Request.Method} {context.Request.Path} {statusCode} {stopwatch.ElapsedMilliseconds} ms");
+    }
+}
+```
+
+Extension:  
+
+```csharp
+namespace HelpDesk.Api.Middleware;
+
+public static class RequestTimingMiddlewareExtension
+{
+    public static IApplicationBuilder UseRequestTiming(this IApplicationBuilder builder)
+    {
+        return builder.UseMiddleware<RequestTimingMiddleware>();
+    }
+}
+```
+
+The middleware gets `next` through the constructor because the object is created
+once, when the pipeline is built at startup. `HttpContext` is different for every
+request, so it arrives as the parameter of `InvokeAsync`.
+
+The extension method is optional. It is a convenience wrapper, and
+`UseMiddleware<T>()` does the same thing.
+
+Implemented in `Program.cs` like this:  
+```csharp
+app.UseRequestTiming();
+```
+
+The log shows the following after the steps: 
+- launch browser
+- navigate to swagger
+- run get all
+- run the non-existent request from `HelpDesk.Api.http`
+
+```http request
+@host = https://localhost:7124
+
+### GET With API Key (200)
+GET {{host}}/api/Tickets
+Accept: application/json
+X-Api-Key: anything
+
+### GET Without API Key (401)
+GET {{host}}/api/tickets/
+Accept: application/json
+
+### OpenApi Document
+GET {{host}}/openapi/v1.json
+Accept: application/json
+X-Api-Key: anything
+
+### Unknown URL
+GET {{host}}/api/get-a-free-iphone
+Accept: application/json
+X-Api-Key: anything
+```
+
+```terminaloutput
+GET / 401 0 ms
+GET /openapi/v1.json 200 99 ms
+GET /api/Tickets 200 9 ms
+GET /api/get-a-free-iphone 404 0 ms
+```
 
 [Write custom ASP.NET Core middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/write?view=aspnetcore-10.0)  
-[Rider HTTP Request Syntax](https://www.jetbrains.com/help/rider/Exploring_HTTP_Syntax.html)   
+[Rider HTTP Request Syntax](https://www.jetbrains.com/help/rider/Exploring_HTTP_Syntax.html)     
+[Use generated openapi documents](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/using-openapi-documents)  
+[OpenApi basic structure](https://docs.bump.sh/openapi/v3.2/understanding-structure/basic-structure/)  
 
 ---
 
 ### Distinguish Between Middleware and Filters
+
+
+
+[Filters in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0)  
 
 ---
 
@@ -218,8 +341,8 @@ builder.Services.AddSingleton<ITicketRepository, InMemoryTicketRepository>();
 
 | Lifetime | Meaning |
 |----------|---------|
-| Transient | A new instance for every request |
-| Scoped | One instance per circuit |
+| Transient | A new instance every time it is requested, even more than once within one request |
+| Scoped | One instance per request |
 | Singleton | One instance shared by every request for the app's lifetime|
 
 Singleton chosen because the data needs to live inside the repo instance. Transient or scoped would 
