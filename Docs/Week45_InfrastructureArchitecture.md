@@ -325,7 +325,62 @@ GET /api/get-a-free-iphone 404 0 ms
 
 ### Distinguish Between Middleware and Filters
 
+**Created directory `Filters` with `AuditActionFilter.cs`.**
 
+```csharp
+using Microsoft.AspNetCore.Mvc.Filters;
+
+namespace HelpDesk.Api.Filters;
+
+internal class AuditActionFilter : IActionFilter
+{
+    public void OnActionExecuting(ActionExecutingContext context)
+    {
+        Console.WriteLine($"==Before==\nAction: {context.ActionDescriptor.DisplayName} Time: {DateTime.UtcNow}");
+    }
+
+    public void OnActionExecuted(ActionExecutedContext context)
+    {
+        Console.WriteLine($"==After==\nAction: {context.ActionDescriptor.DisplayName} Time: {DateTime.UtcNow}");
+    }
+}
+```
+
+**Added filter to `TicketsController`:**  
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+[ServiceFilter(typeof(AuditActionFilter))]
+public class TicketsController : ControllerBase
+```
+
+When it put on the controller, every ticket action gets audited: list, get, create, read, update, delete.  
+If you only wanted to audit Delete, you would only put it on `Delete`.  
+Putting it into the options globally would make every action in the app audited:  
+`AddControllers(O => o.Filters.AddService<AuditActionFilter>())`.
+
+The contrast here is that middleware runs for every request, including `/openapi/v1,json`, unknown URLs, 
+and 401s. A filter only runs for the actions you attach it to, and only after a controller action has been 
+selected.
+
+**Registered in `Program.cs`:**  
+
+```csharp
+builder.Services.AddScoped<AuditActionFilter>();
+```
+
+**Console output:**
+
+```terminaloutput
+==Before==
+Action: HelpDesk.Api.Controllers.TicketsController.GetAll (HelpDesk.Api) Time: 04/11/2026 20:24:05
+==After==
+Action: HelpDesk.Api.Controllers.TicketsController.GetAll (HelpDesk.Api) Time: 04/11/2026 20:24:05
+GET /api/Tickets 200 21 ms
+```
+
+The timing comes last because `RequestTimingMiddleware` wraps the whole pipeline, including the filters.
 
 [Filters in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0)  
 
