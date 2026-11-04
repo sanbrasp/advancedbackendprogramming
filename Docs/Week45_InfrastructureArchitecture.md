@@ -421,20 +421,21 @@ builder.Services.AddScoped<ValidateIdFilter>();
 
 **Console output**  
 ```terminaloutput
-Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:02:34
-==After==
-Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:02:34
-GET /api/tickets/0 400 9 ms
 ==Before==
-Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:03:27
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:25:29
 ==After==
-Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:03:27
-GET /api/tickets/1 200 3 ms
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:25:29
+GET /api/tickets/0 400 19 ms
 ==Before==
-Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:04:31
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:25:32
 ==After==
-Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:04:31
-GET /api/tickets/-1 400 1 ms
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:25:32
+GET /api/tickets/-1 400 3 ms
+==Before==
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:25:33
+==After==
+Action: HelpDesk.Api.Controllers.TicketsController.GetById (HelpDesk.Api) Time: 04/11/2026 21:25:33
+GET /api/tickets/1 200 10 ms
 ```
 
 Response body says: "ID must be greater than 0". The action itself never ran.
