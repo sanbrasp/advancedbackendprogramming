@@ -16,6 +16,7 @@ builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.NumberHandling = JsonNumberHandling.Strict);
 builder.Services.AddSingleton<ITicketRepository, InMemoryTicketRepositoryRepository>();
 builder.Services.AddScoped<AuditActionFilter>();
+builder.Services.AddScoped<ValidateIdFilter>();
 
 // Build the app
 var app = builder.Build();
