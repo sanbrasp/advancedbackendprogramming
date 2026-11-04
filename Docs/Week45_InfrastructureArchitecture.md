@@ -26,10 +26,10 @@ Week 45 notes
 Learning goals for week 45:
 
 Goals for this project:
-- [ x ] 1 I can explain the request pipeline and what the order of middleware means
-- [ x ] 2 I can explain short-circuiting and the correct use of the next delegate
-- [ x ] 3 I can write a custom middleware class
-- [ ] 4 I can distinguish between middleware and filters and explain their use cases
+- [x] 1 I can explain the request pipeline and what the order of middleware means
+- [x] 2 I can explain short-circuiting and the correct use of the next delegate
+- [x] 3 I can write a custom middleware class
+- [x] 4 I can distinguish between middleware and filters and explain their use cases
 - [ ] 5 I can register services in the DI container with the right lifetime
 - [ ] 6 I can use constructor injection and explain why Service Locator is an anti-pattern
 - [ ] 7 I can set up the Options pattern with validation and use IOptions in a controller
