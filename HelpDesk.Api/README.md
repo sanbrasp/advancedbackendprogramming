@@ -30,17 +30,19 @@ Data lives in memory only and resets when app restarts.
 ```text
 HelpDesk.Api/
 ├── Controllers/
-│   └── ErrorController.cs              Target of UseExceptionHandler("/error"
-│   └── TicketsController.cs            CRUD endpoints for tickets
+│   ├── ErrorController.cs                      Target of UseExceptionHandler("/error")
+│   └── TicketsController.cs                    CRUD endpoints for tickets
 ├── Data/
-│   └── InMemoryTicketRepository.cs     In-memory store, implements ITicketRepository
+│   └── InMemoryTicketRepository.cs             In-memory store, implements ITicketRepository
 ├── Interfaces/
-│   └── ITicketRepository.cs            Contract for the ticket store
+│   └── ITicketRepository.cs                    Contract for the ticket store
 ├── Middleware/
-│   └── ApiKeyMiddleware.cs             A custom middleware. Rejects request without X-Api-Key header
+│   ├── ApiKeyMiddleware.cs                     A custom middleware. Rejects request without X-Api-Key header
+│   ├── RequestTimingMiddleware.cs              Custom middleware. Logs method, path, timing and code.
+│   └── RequestTimingMiddlewareExtension.cs     Extension that calls on the middleware
 ├── Records/
-│   └── TicketRecord.cs                 Ticket data model (record)
-└── Program.cs                          Service registration and middleware pipeline
+│   └── TicketRecord.cs                         Ticket data model (record)
+└── Program.cs                                  Service registration and middleware pipeline
 ```
 
 ---
@@ -76,7 +78,8 @@ Base route: `api/tickets`
 ```mermaid
 flowchart LR
   C[Client] --> E[Exception handler]
-  E --> K[ApiKeyMiddleware]
+  E --> R[RequestTimingMiddleware]
+  R --> K[ApiKeyMiddleware]
   K -- "401 (no X-Api-Key)" --> C
   K --> T[TicketsController]
   T --> I[ITicketRepository]
