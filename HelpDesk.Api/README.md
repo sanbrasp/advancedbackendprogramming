@@ -30,11 +30,14 @@ Data lives in memory only and resets when app restarts.
 ```text
 HelpDesk.Api/
 ├── Controllers/
+│   └── ErrorController.cs              Target of UseExceptionHandler("/error"
 │   └── TicketsController.cs            CRUD endpoints for tickets
 ├── Data/
 │   └── InMemoryTicketRepository.cs     In-memory store, implements ITicketRepository
 ├── Interfaces/
 │   └── ITicketRepository.cs            Contract for the ticket store
+├── Middleware/
+│   └── ApiKeyMiddleware.cs             A custom middleware. Rejects request without X-Api-Key header
 ├── Records/
 │   └── TicketRecord.cs                 Ticket data model (record)
 └── Program.cs                          Service registration and middleware pipeline
@@ -52,15 +55,19 @@ A ticket has an `id`, a `user`, a `dateOfIssue`, a `dateOfDeadline` (both UTC, I
 
 Base route: `api/tickets`
 
-| Method | Path                | Purpose                   | Success                 | Errors          |
-|--------|---------------------|---------------------------|-------------------------|-----------------|
-| GET    | `/api/tickets`      | List all tickets          | 200                     | N/A             |
-| GET    | `/api/tickets/{id}` | Get one ticket            | 200                     | 404             |
-| POST   | `/api/tickets`      | Create a ticket           | 201 + `Location` header | 409 (id exists) |
-| PUT    | `/api/tickets/{id}` | Replace a ticket / update | 200                     | 404             |
-| DELETE | `/api/tickets/{id}` | Delete a ticket           | 200                     | 404             |
+| Method | Path                | Purpose                                   | Success                 | Errors          |
+|--------|---------------------|-------------------------------------------|-------------------------|-----------------|
+| GET    | `/api/tickets`      | List all tickets                          | 200                     | N/A             |
+| GET    | `/api/tickets/{id}` | Get one ticket                            | 200                     | 404             |
+| POST   | `/api/tickets`      | Create a ticket                           | 201 + `Location` header | 409 (id exists) |
+| PUT    | `/api/tickets/{id}` | Replace a ticket / update                 | 200                     | 404             |
+| DELETE | `/api/tickets/{id}` | Delete a ticket                           | 200                     | 404             |
+| any    | `/error`            | Exception handler target, not for clients | 500 + problem json      | N/A             |
 
 - The route id always wins over an id in the request body on `PUT`
+- All the endpoints require an `X-Api-Key` header. Without one, the API returns `401`
+- The middleware only checks that the header is present. Any value is accepted for now
+- Unhandled exceptions return a short `application/problem+json` 500 response without the full stack trace
 
 ---
 
@@ -68,23 +75,30 @@ Base route: `api/tickets`
 
 ```mermaid
 flowchart LR
-    C[Client] --> T[TicketsController]
-    T --> I[ITicketRepository]
-    I --> M[InMemoryTicketRepository]
-    M --> D[ConcurrentDictionary of TicketRecord]
-    D --> M
-    M --> T
-    T --> C
+  C[Client] --> E[Exception handler]
+  E --> K[ApiKeyMiddleware]
+  K -- "401 (no X-Api-Key)" --> C
+  K --> T[TicketsController]
+  T --> I[ITicketRepository]
+  I --> M[InMemoryTicketRepository]
+  M --> D[ConcurrentDictionary of TicketRecord]
+  D --> M
+  M --> T
+  T --> C
 ```
 
 - The controller depends on `ITicketRepository` interface, not on the concrete class
 - `Program.cs` registers `InMemoryTicketRepository` as a singleton, so all requests share one store
 - `ConcurrentDictionary` is used because that one instance is shared by concurrent requests, and for thread-safety
+- Middleware runs in registration order. `ApiKeyMiddleware` short-circuits the request when the header is missing
 
 ---
 
 ## Sources
 
-[ASP.NET Core Middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-10.0)
+[ASP.NET Core Middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-10.0)  
+[Write custom ASP.NET Core middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/write?view=aspnetcore-10.0)  
+[Rider HTTP Request Syntax](https://www.jetbrains.com/help/rider/Exploring_HTTP_Syntax.html)  
+
 
 ---
