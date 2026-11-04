@@ -36,7 +36,7 @@ HelpDesk.Api/
 │   └── InMemoryTicketRepository.cs             In-memory store, implements ITicketRepository
 ├── Filters/
 │   ├── AuditActionFilter.cs                    An audit filter implementing IActionFilter interface
-│   └── ValidateIdFilter.cs
+│   └── ValidateIdFilter.cs                     Returns 400 when id is 0 or lower (GetById only)
 ├── Interfaces/
 │   └── ITicketRepository.cs                    Contract for the ticket store
 ├── Middleware/
@@ -96,7 +96,9 @@ flowchart LR
   R --> K[ApiKeyMiddleware]
   K -- "401 (no X-Api-Key)" --> C
   K --> F[AuditActionFilter]
-  F --> T[TicketsController]
+  F --> V[ValidateIdFilter]
+  V -- "400 (id <= 0)" --> C
+  V --> T[TicketsController]
   T --> I[ITicketRepository]
   I --> M[InMemoryTicketRepository]
   M --> D[ConcurrentDictionary of TicketRecord]
@@ -111,6 +113,7 @@ flowchart LR
 - Middleware runs in registration order. `ApiKeyMiddleware` short-circuits the request when the header is missing
 - `AuditActionFilter` is applied to `TicketsController` with `[ServiceFilter]` and runs only for controller actions, 
   not for requests stopped by middleware.
+- `ValidateIdFilter` is applied to `GetById` only and returns `400` when the id is 0 or lower, before the action runs
 
 ---
 
