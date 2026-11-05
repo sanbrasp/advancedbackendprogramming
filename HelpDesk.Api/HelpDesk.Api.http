@@ -33,3 +33,8 @@ X-Api-Key: anything
 GET {{host}}/api/tickets/1
 Accept: application/json
 X-Api-Key: anything
+
+### GET Diagnostics (operation ID)
+GET {{host}}/api/Diagnostics
+Accept: application/json
+X-Api-Key: anything
