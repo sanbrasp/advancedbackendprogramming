@@ -30,6 +30,7 @@ Data lives in memory only and resets when app restarts.
 ```text
 HelpDesk.Api/
 ├── Controllers/
+│   ├── DiagnosticsController.cs                Returns the three lifetime IDs (lifetime demo)
 │   ├── ErrorController.cs                      Target of UseExceptionHandler("/error")
 │   └── TicketsController.cs                    CRUD endpoints for tickets
 ├── Data/
@@ -38,12 +39,18 @@ HelpDesk.Api/
 │   ├── AuditActionFilter.cs                    An audit filter implementing IActionFilter interface
 │   └── ValidateIdFilter.cs                     Returns 400 when id is 0 or lower (GetById only)
 ├── Interfaces/
+│   ├── IOperation.cs                           For the lifetime demo
+│   ├── IOperationScoped.cs                     For the lifetime demo
+│   ├── IOperationSingleton.cs                  For the lifetime demo
+│   ├── IOperationTransient.cs                  For the lifetime demo
 │   ├── ITicketRepository.cs                    Contract for the ticket store
 │   └── ITicketService.cs                       A contract holding the methods for TicketService
 ├── Middleware/
 │   ├── ApiKeyMiddleware.cs                     A custom middleware. Rejects requests without X-Api-Key header
 │   ├── RequestTimingMiddleware.cs              Custom middleware. Logs method, path, timing and code.
 │   └── RequestTimingMiddlewareExtension.cs     Extension that calls on the middleware
+├── Models/
+│   └── Operation.cs                            One class registered three times for the lifetime demo
 ├── Records/
 │   └── TicketRecord.cs                         Ticket data model (record)
 ├── Services/
@@ -82,6 +89,7 @@ Base route: `api/tickets`
 | PUT    | `/api/tickets/{id}` | Replace a ticket / update                 | 200                     | 404             |
 | DELETE | `/api/tickets/{id}` | Delete a ticket                           | 200                     | 404             |
 | any    | `/error`            | Exception handler target, not for clients | 500 + problem json      | N/A             |
+| GET    | `/api/Diagnostics`  | is a lifetime demo endpoint               | N/A                     | N/A             |
 
 - The route id always wins over an id in the request body on `PUT`
 - All the endpoints require an `X-Api-Key` header. Without one, the API returns `401`

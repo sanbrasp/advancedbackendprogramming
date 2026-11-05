@@ -531,6 +531,50 @@ public class TicketService : ITicketService
 | `ITicketRepository` | Singleton | Holds the ticket data. A new instance per request would give an empty store every time.|
 | `ITicketService` | Scoped | Holds no data of its own and only depends on the singleton repository. Scoped is the safer default if the repo later becomes scoped (ex., database).|
 
+**Seeing the three lifetimes in action**  
+
+To demonstrate, I wrote `Operation.cs` that implements one interface per lifetime:
+
+- `IOperationTransient`
+- `IOperationSingleton`
+- `IOperationScoped`
+
+`Operation`'s constructor gives a random four-digit ID: `OperationId`.
+
+```csharp
+builder.Services.AddTransient<IOperationTransient, Operation>();
+builder.Services.AddScoped<IOperationScoped, Operation>();
+builder.Services.AddSingleton<IOperationSingleton, Operation>();
+```
+
+`DiagnosticsController` returns the three IDs. `RequestTimingMiddleware` logs the same three.  
+The singleton goes into the middleware's constructor. The scoped and transient services go in `InvokeAsync` as parameters.  
+This is because the middleware object is created once and a per-request service can't be held by it.
+
+**Console Output - Two requests to `/api/Diagnostics`**  
+
+```terminaloutput
+GET /api/Diagnostics 200 24 ms
+Singleton: 8386
+Scoped: 1638
+Transient: 8075
+Time: 24 ms
+GET /api/Diagnostics 200 1 ms
+Singleton: 8386
+Scoped: 2777
+Transient: 3612
+Time: 1 ms
+```
+
+| Lifetime | Middleware and controller, same request: same id? | Same id across the two requests? |
+|----------|---------------------------------------------------|----------------------------------|
+| Transient | No. Each consumer that asks gets its own new instance | No |
+| Scoped | Yes. One instance per request, shared by everyone in it | No |
+| Singleton | Yes | Yes |
+
+The singleton id stays the same until the app restarts, which is the "app lifetime" in the table above.
+After a restart, it gets a new one.
+
 [🏠 To top](#overview)
 
 ---
