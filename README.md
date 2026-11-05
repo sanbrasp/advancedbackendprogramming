@@ -8,11 +8,14 @@ Projects, notes, code and resources for the Advanced Backend Programming course 
 
 ```text
 AdvancedProgrammingSolution/
-├── README.md               Solution README
+├── HelpDesk.Api/           Week 45 goals
+│   └── README.ms           Helpdesk API README
 ├── WebApiBasics/           Week 44 goals
 │   └── README.md           Web API Basics README
-└── HelpDesk.Api/           Week 45 goals
-    └── README.ms           Helpdesk API README
+├── Docs/
+│   └── Week44_Introduction.md
+│   └── Week45_InfrastructureArchitecture.md
+└── README.md               Solution README
 ```
 
 ---
@@ -47,9 +50,9 @@ dotnet run --project Helpdesk.Api
 ---
 
 ## Document Links
-- [Week 44](Docs/Week44_Introduction.md)
+- [Week 44 Notes](Docs/Week44_Introduction.md)
   - [WebApiBasics README](WebApiBasics/README.md)
-- [Week 45](Docs/Week45_InfrastructureArchitecture.md)
-  - [HelpdeskAPI README](HelpDesk.Api/README.md)
+- [Week 45 Notes](Docs/Week45_InfrastructureArchitecture.md)
+  - [HelpDesk.API README](HelpDesk.Api/README.md)
 
 ---
