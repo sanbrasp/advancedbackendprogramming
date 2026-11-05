@@ -486,6 +486,50 @@ Singleton chosen because the data needs to live inside the repo instance. Transi
 create a new, empty store every time, and the tickets disappear.  
 Because every request shares the one instance, it uses a `ConcurrentDictionary`.
 
+Wrote and added `TicketService` and `ITicketService`.  
+Registered as `Singleton` in `Program.cs`.
+
+```csharp
+builder.Services.AddSingleton<ITicketService, TicketService>();
+```
+
+For this service, the lifetime doesn't matter as much as for the repository.  
+Scoped would give a new `TicketService` per request, which would work because the data lives in the singleton
+repository.  
+Transient would give a new instance every time something asks for one, which is also once per request, 
+since only the controller asks. Same behavior.  
+Singleton gives one instance for the app's lifetime, which also gives the same behavior.  
+A shorter-lived service can safely depend on a longer-lived one, so a scoped or transient service 
+calling a singleton repository is fine.
+
+`TicketsController` now takes `ITicketService`, and `Ticketservice` takes `ITicketRepository`. 
+
+```csharp
+public class TicketsController : ControllerBase
+{
+    private readonly ITicketService _ticketService;
+
+    public TicketsController(ITicketService ticketService)
+    {
+        _ticketService = ticketService;
+    }
+```
+
+```csharp
+public class TicketService : ITicketService
+{
+    private readonly ITicketRepository _ticketRepo;
+
+    public TicketService(ITicketRepository ticketRepo)
+    {
+        _ticketRepo = ticketRepo;
+    }
+```
+
+| Service | Lifetime | Reason |
+|--------|---------|---------|
+| `ITicketRepositor` | Singleton | Holds the ticket data. A new instance per request would give an empty store every time.|
+| `ITicketService` | Singleton | Holds no data of its own and only depends on the singleton repository, so it is safe as a singleton. Scoped or Transient would behave the same way.|
 
 [🏠 To top](#overview)
 
