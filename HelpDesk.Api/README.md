@@ -38,13 +38,16 @@ HelpDesk.Api/
 │   ├── AuditActionFilter.cs                    An audit filter implementing IActionFilter interface
 │   └── ValidateIdFilter.cs                     Returns 400 when id is 0 or lower (GetById only)
 ├── Interfaces/
-│   └── ITicketRepository.cs                    Contract for the ticket store
+│   ├── ITicketRepository.cs                    Contract for the ticket store
+│   └── ITicketService.cs                       A contract holding the methods for TicketService
 ├── Middleware/
 │   ├── ApiKeyMiddleware.cs                     A custom middleware. Rejects requests without X-Api-Key header
 │   ├── RequestTimingMiddleware.cs              Custom middleware. Logs method, path, timing and code.
 │   └── RequestTimingMiddlewareExtension.cs     Extension that calls on the middleware
 ├── Records/
 │   └── TicketRecord.cs                         Ticket data model (record)
+├── Services/
+│   └── TicketService.cs                        Implements ITicketService and calls method via the repository
 └── Program.cs                                  Service registration and middleware pipeline
 ```
 
@@ -99,21 +102,26 @@ flowchart LR
   F --> V[ValidateIdFilter]
   V -- "400 (id <= 0)" --> C
   V --> T[TicketsController]
-  T --> I[ITicketRepository]
+  T --> S[ITicketService]
+  S --> TS[TicketService]
+  TS --> I[ITicketRepository]
   I --> M[InMemoryTicketRepository]
   M --> D[ConcurrentDictionary of TicketRecord]
   D --> M
-  M --> T
+  M --> TS
+  TS --> T
   T --> C
 ```
 
-- The controller depends on `ITicketRepository` interface, not on the concrete class
+- The controller depends on `ITicketService` interface, not on the concrete class
 - `Program.cs` registers `InMemoryTicketRepository` as a singleton, so all requests share one store
 - `ConcurrentDictionary` is used because that one instance is shared by concurrent requests, and for thread-safety
 - Middleware runs in registration order. `ApiKeyMiddleware` short-circuits the request when the header is missing
 - `AuditActionFilter` is applied to `TicketsController` with `[ServiceFilter]` and runs only for controller actions, 
   not for requests stopped by middleware.
-- `ValidateIdFilter` is applied to `GetById` only and returns `400` when the id is 0 or lower, before the action runs
+- `ValidateIdFilter` is applied to `GetById` only and returns `400` when the id is 0 or lower, before the action runs.  
+- `ITicketService` and `TicketService` are registered as scoped.
+- The service depends on `ITicketRepository`.
 
 ---
 
@@ -124,5 +132,7 @@ flowchart LR
 [Rider HTTP Request Syntax](https://www.jetbrains.com/help/rider/Exploring_HTTP_Syntax.html)    
 [Swagger Config and Customize](https://github.com/domaindrivendev/Swashbuckle.AspNetCore/blob/master/docs/configure-and-customize-swaggerui.md)    
 [Filters in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-10.0)  
+[Dependency Injection ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-10.0)  
+
 
 ---

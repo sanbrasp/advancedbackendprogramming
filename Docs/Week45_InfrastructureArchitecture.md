@@ -487,10 +487,10 @@ create a new, empty store every time, and the tickets disappear.
 Because every request shares the one instance, it uses a `ConcurrentDictionary`.
 
 Wrote and added `TicketService` and `ITicketService`.  
-Registered as `Singleton` in `Program.cs`.
+Registered as `Scoped` in `Program.cs`.
 
 ```csharp
-builder.Services.AddSingleton<ITicketService, TicketService>();
+builder.Services.AddScoped<ITicketService, TicketService>();
 ```
 
 For this service, the lifetime doesn't matter as much as for the repository.  
@@ -502,7 +502,7 @@ Singleton gives one instance for the app's lifetime, which also gives the same b
 A shorter-lived service can safely depend on a longer-lived one, so a scoped or transient service 
 calling a singleton repository is fine.
 
-`TicketsController` now takes `ITicketService`, and `Ticketservice` takes `ITicketRepository`. 
+`TicketsController` now takes `ITicketService`, and `TicketService` takes `ITicketRepository`. 
 
 ```csharp
 public class TicketsController : ControllerBase
@@ -528,8 +528,8 @@ public class TicketService : ITicketService
 
 | Service | Lifetime | Reason |
 |--------|---------|---------|
-| `ITicketRepositor` | Singleton | Holds the ticket data. A new instance per request would give an empty store every time.|
-| `ITicketService` | Singleton | Holds no data of its own and only depends on the singleton repository, so it is safe as a singleton. Scoped or Transient would behave the same way.|
+| `ITicketRepository` | Singleton | Holds the ticket data. A new instance per request would give an empty store every time.|
+| `ITicketService` | Scoped | Holds no data of its own and only depends on the singleton repository. Scoped is the safer default if the repo later becomes scoped (ex., database).|
 
 [🏠 To top](#overview)
 
@@ -540,15 +540,20 @@ public class TicketService : ITicketService
 `TicketsController` asks for its dependency in the constructor:
 
 ```csharp
-public TicketsController(ITicketRepository tickets)
+public class TicketsController : ControllerBase
 {
-    _tickets = tickets;
-}
+    private readonly ITicketService _ticketService;
+
+    public TicketsController(ITicketService ticketService)
+    {
+        _ticketService = ticketService;
+    }
 ```
 
 - The controller depends on the interface and never writes `new` or names the concrete class.
 - The implementation can be swapped in `Program.cs` without touching the controller.
-- It is easy to test with a fake repository.
+- It is easy to test with a fake service or repository.
+- Controller -> `ITicketService` -> `ITicketRepository`
 
 Microsoft recommends requesting dependencies as constructor parameters and avoiding the service locator 
 pattern, for example calling `GetService` to fetch a service yourself.
