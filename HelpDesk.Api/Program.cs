@@ -3,6 +3,7 @@ using HelpDesk.Api.Data;
 using HelpDesk.Api.Filters;
 using HelpDesk.Api.Interfaces;
 using HelpDesk.Api.Middleware;
+using HelpDesk.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,7 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 builder.Services.AddSingleton<ITicketRepository, InMemoryTicketRepositoryRepository>();
 builder.Services.AddScoped<AuditActionFilter>();
 builder.Services.AddScoped<ValidateIdFilter>();
+builder.Services.AddSingleton<ITicketService, TicketService>();
 
 // Build the app
 var app = builder.Build();
