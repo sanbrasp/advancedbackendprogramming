@@ -18,7 +18,7 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 builder.Services.AddSingleton<ITicketRepository, InMemoryTicketRepositoryRepository>();
 builder.Services.AddScoped<AuditActionFilter>();
 builder.Services.AddScoped<ValidateIdFilter>();
-builder.Services.AddSingleton<ITicketService, TicketService>();
+builder.Services.AddScoped<ITicketService, TicketService>();
 
 // Build the app
 var app = builder.Build();
