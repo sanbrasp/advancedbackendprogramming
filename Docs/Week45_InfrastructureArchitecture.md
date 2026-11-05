@@ -30,7 +30,7 @@ Goals for this project:
 - [x] 2 I can explain short-circuiting and the correct use of the next delegate
 - [x] 3 I can write a custom middleware class
 - [x] 4 I can distinguish between middleware and filters and explain their use cases
-- [ ] 5 I can register services in the DI container with the right lifetime
+- [x] 5 I can register services in the DI container with the right lifetime
 - [ ] 6 I can use constructor injection and explain why Service Locator is an anti-pattern
 - [ ] 7 I can set up the Options pattern with validation and use IOptions in a controller
 - [ ] 8 I can explain why secrets don't belong in appsettings.json
@@ -493,7 +493,7 @@ Registered as `Scoped` in `Program.cs`.
 builder.Services.AddScoped<ITicketService, TicketService>();
 ```
 
-For this service, the lifetime doesn't matter as much as for the repository.  
+For this service (_at the time of writing this_), the lifetime doesn't matter as much as for the repository.  
 Scoped would give a new `TicketService` per request, which would work because the data lives in the singleton
 repository.  
 Transient would give a new instance every time something asks for one, which is also once per request, 
