@@ -10,25 +10,25 @@ namespace HelpDesk.Api.Controllers;
 [ServiceFilter(typeof(AuditActionFilter))]
 public class TicketsController : ControllerBase
 {
-    private readonly ITicketRepository _ticketsRepository;
+    private readonly ITicketService _ticketService;
 
-    public TicketsController(ITicketRepository ticketsRepository)
+    public TicketsController(ITicketService ticketService)
     {
-        _ticketsRepository = ticketsRepository;
+        _ticketService = ticketService;
     }
 
 
     [HttpGet]
     public ActionResult<IEnumerable<TicketRecord>> GetAll()
     {
-        return Ok(_ticketsRepository.GetAll());
+        return Ok(_ticketService.GetAll());
     }
 
     [HttpGet("{id}")]
     [ServiceFilter(typeof(ValidateIdFilter))]
     public ActionResult<TicketRecord> GetById(int id)
     {
-        if (!_ticketsRepository.TryGet(id, out var ticket))
+        if (!_ticketService.TryGet(id, out var ticket))
         {
             return NotFound();
         }
@@ -39,7 +39,7 @@ public class TicketsController : ControllerBase
     [HttpPost]
     public ActionResult<TicketRecord> Create(TicketRecord ticket)
     {
-        if (!_ticketsRepository.TryAdd(ticket))
+        if (!_ticketService.TryAdd(ticket))
         {
             return Conflict();
         }
@@ -50,7 +50,7 @@ public class TicketsController : ControllerBase
     [HttpPut("{id}")]
     public ActionResult<TicketRecord> Update(int id, TicketRecord ticket)
     {
-        if (!_ticketsRepository.TryUpdate(id, ticket, out var updatedTicket))
+        if (!_ticketService.TryUpdate(id, ticket, out var updatedTicket))
         {
             return NotFound();
         }
@@ -61,7 +61,7 @@ public class TicketsController : ControllerBase
     [HttpDelete("{id}")]
     public ActionResult<TicketRecord> Delete(int id)
     {
-        if (!_ticketsRepository.TryRemove(id, out var removedTicket))
+        if (!_ticketService.TryRemove(id, out var removedTicket))
         {
             return NotFound();
         }
