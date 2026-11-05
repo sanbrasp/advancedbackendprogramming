@@ -10,7 +10,7 @@ public interface ITicketRepository
     
     bool TryAdd(TicketRecord addedTicket);
     
-    bool TryRemove(int id, out TicketRecord? removedTicket);
-    
     bool TryUpdate(int id,TicketRecord ticket, out TicketRecord? updatedTicket);
+    
+    bool TryRemove(int id, out TicketRecord? removedTicket);
 }
