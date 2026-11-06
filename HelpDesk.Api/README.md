@@ -56,6 +56,7 @@ HelpDesk.Api/
 ├── Services/
 │   └── TicketService.cs                        Implements ITicketService and calls method via the repository
 ├── Settings/
+│   ├── SecuritySettings.cs                     Holds the required ApiKey, bound to Security section
 │   └── TicketSettings.cs                       Holds MaxTicketsReturned and MaxDescriptionLength, validated using Range
 └── Program.cs                                  Service registration and middleware pipeline
 ```
@@ -87,7 +88,7 @@ Base route: `api/tickets`
 |--------|---------------------|-------------------------------------------------|-------------------------|---------------------------------------------|
 | GET    | `/api/tickets`      | List all tickets (at most `MaxTicketsReturned`) | 200                     | N/A                                         |
 | GET    | `/api/tickets/{id}` | Get one ticket                                  | 200                     | 404, 400                                    |
-| POST   | `/api/tickets`      | Create a ticket                                 | 201 + `Location` header | 409 (id exists), 404 (description too long) |
+| POST   | `/api/tickets`      | Create a ticket                                 | 201 + `Location` header | 409 (id exists), 400 (description too long) |
 | PUT    | `/api/tickets/{id}` | Replace a ticket / update                       | 200                     | 404                                         |
 | DELETE | `/api/tickets/{id}` | Delete a ticket                                 | 200                     | 404                                         |
 | any    | `/error`            | Exception handler target, not for clients       | 500 + problem json      | N/A                                         |
@@ -95,8 +96,9 @@ Base route: `api/tickets`
 
 - The route id always wins over an id in the request body on `PUT`
 - All the endpoints require an `X-Api-Key` header. Without one, the API returns `401`
-- The middleware only checks that the header is present. Any value is accepted for now
+- ~~The middleware only checks that the header is present. Any value is accepted for now~~
 - Unhandled exceptions return a short `application/problem+json` 500 response without the full stack trace
+- The middleware now compares the key with `Security:ApiKey` from the configuration
 
 ---
 
@@ -107,7 +109,7 @@ flowchart LR
   C[Client] --> E[Exception handler]
   E --> R[RequestTimingMiddleware]
   R --> K[ApiKeyMiddleware]
-  K -- "401 (no X-Api-Key)" --> C
+  K -- "401 (missing or wrong X-Api-Key)" --> C
   K --> F[AuditActionFilter]
   F --> V[ValidateIdFilter]
   V -- "400 (id <= 0)" --> C
@@ -121,8 +123,10 @@ flowchart LR
   M --> TS
   TS --> T
   T --> C
-  T --> I[IOptions of TicketSettings]
+  T --> O[IOptions of TicketSettings]
   O --> A[appsettings.json, Tickets section]
+  K --> SO[IOptions of SecuritySettings]
+  SO --> U[User secrets, Security:ApiKey]
 ```
 
 - The controller depends on `ITicketService` interface, not on the concrete class.

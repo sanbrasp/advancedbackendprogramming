@@ -36,12 +36,20 @@ AdvancedProgrammingSolution/
 ## Build and run
 
 **Week 44 Project**  
+
 ```bash
 dotnet build
 dotnet run --project WebApiBasics
 ```
 
 **Week 45 Project**  
+
+The API key is not in the repository. Set it in user secrets first (use any made-up value):
+
+```text
+dotnet user-secrets set "Security:ApiKey" "<your-demo-key>"
+```
+
 ```bash
 dotnet build
 dotnet run --project Helpdesk.Api

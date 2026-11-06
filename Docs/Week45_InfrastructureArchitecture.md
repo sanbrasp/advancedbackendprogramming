@@ -708,18 +708,50 @@ than `MaxDescriptionLength`, before the ticket is stored.
 
 `Configure<T>` only binds the values. It does not run the validation rules, so I used `AddOptions<T>()`.
 
-Tested with four tickets in the store: `GET /api/tickets` returned three.  
+Tested with four tickets in the store: `GET /api/tickets` returned three (with the limit set to 3, this is later outdated).  
 A POST with a long description returned 400.
 
-[Options Pattern in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/options?view=aspnetcore-8.0)  
-[Configuration in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-8.0)  
-[Safe Storage ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-8.0&tabs=windows%2Cpowershell)  
+[Options Pattern in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/options?view=aspnetcore-10.0)  
+[Configuration in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-10.0)  
+[Safe Storage ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0&tabs=windows%2Cpowershell)  
 
 [🏠 To top](#overview)
 
 ---
 
 ### Why Secrets Don't Belong in appsettings.json
+
+The API key lives in user secrets, not in `appsettings.json` or any file that goes into Git. 
+
+```bash
+dotnet user-secrets init
+dotnet user-secrets set "Security:ApiKey" "<your-demo-key>"
+```
+
+`init` adds a `UserSecretsId` to the `.csproj`. The secrets file is stored outside the project 
+at `%APPDATA%\Microsoft\UserSecrets\<UserSecretsId>\secrets.json` (Windows). It is not encrypted and is only loaded in
+Development, so it separates the key from the repository, but is not a secure store (only for learning and development).
+
+`SecuritySettings` has a `[Required]` `ApiKey`, bound to the `Security` section and validated at startup. 
+`ApiKeyMiddleware` gets it through `IOptions<SecuritySettings>` in its constructor and compares it to the 
+`X-Api-Key` header. Swagger reads the same value from configuration for its request interceptor.
+
+The `.http` file uses `{{apiKey}}` from `http-client.private.env.json` (not in repo), which is also included in 
+`.gitignore`. The HTTP client is a separate program and cannot read user secrets, so it needs its own copy of the key.
+
+**Proof that key is not in repo**  
+
+```text
+git grep "<your-demo-key>"                                      (no output)
+git log --all -S "<your-demo-key>" --oneline                    (no output)
+git check-ignore -v HelpDesk.Api/http-client.private.env.json   (ignored by .gitignore line 2)
+```
+
+Only `http-client.private.env.json` in the working folder contains the key, and Git ignores the file.
+
+[Option Binders Populate Init](https://stackoverflow.com/questions/65131217/are-c-sharp-9-init-properties-safe-to-use-for-configuration-binding-ioptions)  
+[HTTP Client variables](https://www.jetbrains.com/help/idea/2025.3/http-client-variables.html)  
+[Safe Storage ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0&tabs=windows%2Cpowershell)  
 
 [🏠 To top](#overview)
 
