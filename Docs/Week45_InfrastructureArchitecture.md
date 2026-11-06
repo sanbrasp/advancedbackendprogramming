@@ -782,6 +782,10 @@ The short explanation is:
 
 ### Responsibility of Each Layer / Dependency Diagram
 
+`HelpDesk.Api`  
+`HelpDesk.Core`  
+`HelpDesk.Infrastructure`  
+
 [🏠 To top](#overview)
 
 ---
