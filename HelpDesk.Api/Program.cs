@@ -28,6 +28,10 @@ builder.Services.AddOptions<TicketSettings>()
     .Bind(builder.Configuration.GetSection(TicketSettings.SectionName))
     .ValidateDataAnnotations()
     .ValidateOnStart();
+builder.Services.AddOptions<SecuritySettings>()
+    .Bind(builder.Configuration.GetSection(SecuritySettings.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 
 
@@ -37,11 +41,14 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    var apiKey = app.Configuration["Security:ApiKey"];
+    
     app.MapOpenApi();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/openapi/v1.json", "v1");
-        options.UseRequestInterceptor("(req) => { req.headers['X-Api-Key'] = 'anything'; return req; }");
+        options.UseRequestInterceptor(
+            $"(req) => {{ req.headers['X-Api-Key'] = '{apiKey}'; return req; }}");
     });
 }
 
