@@ -5,6 +5,7 @@ using HelpDesk.Api.Interfaces;
 using HelpDesk.Api.Middleware;
 using HelpDesk.Api.Models;
 using HelpDesk.Api.Services;
+using HelpDesk.Api.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,12 @@ builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddTransient<IOperationTransient, Operation>();
 builder.Services.AddScoped<IOperationScoped, Operation>();
 builder.Services.AddSingleton<IOperationSingleton, Operation>();
+builder.Services.AddOptions<TicketSettings>()
+    .Bind(builder.Configuration.GetSection(TicketSettings.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+
 
 // Build the app
 var app = builder.Build();
