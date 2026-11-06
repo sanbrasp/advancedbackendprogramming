@@ -16,4 +16,9 @@
       <Folder Include="Images\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\HelpDesk.Core\HelpDesk.Core.csproj" />
+      <ProjectReference Include="..\HelpDesk.Infrastructure\HelpDesk.Infrastructure.csproj" />
+    </ItemGroup>
+
 </Project>
