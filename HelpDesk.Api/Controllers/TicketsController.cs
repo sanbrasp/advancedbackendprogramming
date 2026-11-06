@@ -1,7 +1,9 @@
 using HelpDesk.Api.Filters;
 using HelpDesk.Api.Interfaces;
 using HelpDesk.Api.Records;
+using HelpDesk.Api.Settings;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace HelpDesk.Api.Controllers;
 
@@ -11,17 +13,22 @@ namespace HelpDesk.Api.Controllers;
 public class TicketsController : ControllerBase
 {
     private readonly ITicketService _ticketService;
+    private readonly IOptions<TicketSettings> _ticketSettings;
 
-    public TicketsController(ITicketService ticketService)
+    public TicketsController(ITicketService ticketService, IOptions<TicketSettings> ticketSettings)
     {
         _ticketService = ticketService;
+        _ticketSettings = ticketSettings;
     }
 
 
     [HttpGet]
     public ActionResult<IEnumerable<TicketRecord>> GetAll()
     {
-        return Ok(_ticketService.GetAll());
+        var pageSize = _ticketSettings.Value.MaxTicketsReturned;
+        {
+            return Ok(_ticketService.GetAll().Take(pageSize));
+        }
     }
 
     [HttpGet("{id}")]
@@ -39,6 +46,11 @@ public class TicketsController : ControllerBase
     [HttpPost]
     public ActionResult<TicketRecord> Create(TicketRecord ticket)
     {
+        if (ticket.Description.Length > _ticketSettings.Value.MaxDescriptionLength)
+        {
+            return BadRequest();
+        }
+        
         if (!_ticketService.TryAdd(ticket))
         {
             return Conflict();
