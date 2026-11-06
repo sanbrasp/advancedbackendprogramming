@@ -32,8 +32,8 @@ Goals for this project:
 - [x] 4 I can distinguish between middleware and filters and explain their use cases
 - [x] 5 I can register services in the DI container with the right lifetime
 - [x] 6 I can use constructor injection and explain why Service Locator is an antipattern
-- [ ] 7 I can set up the Options pattern with validation and use IOptions in a controller
-- [ ] 8 I can explain why secrets don't belong in appsettings.json
+- [x] 7 I can set up the Options pattern with validation and use IOptions in a controller
+- [x] 8 I can explain why secrets don't belong in appsettings.json
 - [ ] 9 I can describe the responsibility of each layer and draw a dependency diagram
 - [ ] 10 I can compare technical layering and feature-based structure
 
@@ -765,7 +765,7 @@ Only `http-client.private.env.json` in the working folder contains the key, and 
 
 **Reasons We Don't Want Secrets in the JSON File**
 
-- Git remembers. One committed, it never goes away
+- Git remembers. Once committed, it never goes away
 - Pushing copies the key to every clone and fork. You can't take it back, only rotate the key
 - It's in plain text, in a file that ships with the code. No protection. 
 
