@@ -55,6 +55,8 @@ HelpDesk.Api/
 │   └── TicketRecord.cs                         Ticket data model (record)
 ├── Services/
 │   └── TicketService.cs                        Implements ITicketService and calls method via the repository
+├── Settings/
+│   └── TicketSettings.cs                       Holds MaxTicketsReturned and MaxDescriptionLength, validated using Range
 └── Program.cs                                  Service registration and middleware pipeline
 ```
 
@@ -81,15 +83,15 @@ public record TicketRecord(
 
 Base route: `api/tickets`
 
-| Method | Path                | Purpose                                   | Success                 | Errors          |
-|--------|---------------------|-------------------------------------------|-------------------------|-----------------|
-| GET    | `/api/tickets`      | List all tickets                          | 200                     | N/A             |
-| GET    | `/api/tickets/{id}` | Get one ticket                            | 200                     | 404, 400        |
-| POST   | `/api/tickets`      | Create a ticket                           | 201 + `Location` header | 409 (id exists) |
-| PUT    | `/api/tickets/{id}` | Replace a ticket / update                 | 200                     | 404             |
-| DELETE | `/api/tickets/{id}` | Delete a ticket                           | 200                     | 404             |
-| any    | `/error`            | Exception handler target, not for clients | 500 + problem json      | N/A             |
-| GET    | `/api/Diagnostics`  | is a lifetime demo endpoint               | N/A                     | N/A             |
+| Method | Path                | Purpose                                         | Success                 | Errors                                      |
+|--------|---------------------|-------------------------------------------------|-------------------------|---------------------------------------------|
+| GET    | `/api/tickets`      | List all tickets (at most `MaxTicketsReturned`) | 200                     | N/A                                         |
+| GET    | `/api/tickets/{id}` | Get one ticket                                  | 200                     | 404, 400                                    |
+| POST   | `/api/tickets`      | Create a ticket                                 | 201 + `Location` header | 409 (id exists), 404 (description too long) |
+| PUT    | `/api/tickets/{id}` | Replace a ticket / update                       | 200                     | 404                                         |
+| DELETE | `/api/tickets/{id}` | Delete a ticket                                 | 200                     | 404                                         |
+| any    | `/error`            | Exception handler target, not for clients       | 500 + problem json      | N/A                                         |
+| GET    | `/api/Diagnostics`  | is a lifetime demo endpoint                     | N/A                     | N/A                                         |
 
 - The route id always wins over an id in the request body on `PUT`
 - All the endpoints require an `X-Api-Key` header. Without one, the API returns `401`

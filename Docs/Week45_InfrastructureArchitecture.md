@@ -31,7 +31,7 @@ Goals for this project:
 - [x] 3 I can write a custom middleware class
 - [x] 4 I can distinguish between middleware and filters and explain their use cases
 - [x] 5 I can register services in the DI container with the right lifetime
-- [ ] 6 I can use constructor injection and explain why Service Locator is an antipattern
+- [x] 6 I can use constructor injection and explain why Service Locator is an antipattern
 - [ ] 7 I can set up the Options pattern with validation and use IOptions in a controller
 - [ ] 8 I can explain why secrets don't belong in appsettings.json
 - [ ] 9 I can describe the responsibility of each layer and draw a dependency diagram
@@ -681,6 +681,39 @@ scope validation reports it.
 ---
 
 ### Set up Options Pattern With Validation
+
+Wrote a `Tickets` section in `appsettings.json` with `MaxTicketsReturned` and `MaxDescriptionLength`.  
+
+```json
+"Tickets": {
+  "MaxTicketsReturned": 10,
+  "MaxDescriptionLength": 500
+}
+```
+
+`TicketSettings` holds the values with a `[Range]` rule on each and a `SectionName` constant.
+It is registered so it is bound to the section, validated with the data annotations, and also validated 
+when the app starts:
+
+```csharp
+builder.Services.AddOptions<TicketSettings>()
+    .Bind(builder.Configuration.GetSection(TicketSettings.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+```
+
+`TicketsController` gets `IOptions<TicketSettings>` through its constructor, and uses `.Value`.
+`GetAll` returns at most `MaxTicketsReturned` tickets, and `Create` returns 400 if the description is longer
+than `MaxDescriptionLength`, before the ticket is stored.
+
+`Configure<T>` only binds the values. It does not run the validation rules, so I used `AddOptions<T>()`.
+
+Tested with four tickets in the store: `GET /api/tickets` returned three.  
+A POST with a long description returned 400.
+
+[Options Pattern in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/options?view=aspnetcore-8.0)  
+[Configuration in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-8.0)  
+[Safe Storage ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-8.0&tabs=windows%2Cpowershell)  
 
 [🏠 To top](#overview)
 
