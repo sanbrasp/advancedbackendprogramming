@@ -786,6 +786,11 @@ The short explanation is:
 `HelpDesk.Core`  
 `HelpDesk.Infrastructure`  
 
+Plan the new structure:  
+- Does it mention HTTP or ASP.NET? That’s Api.
+- Is it about how data is stored? That’s Infrastructure.
+- Is it about what a ticket is or does? That’s Core.
+
 [🏠 To top](#overview)
 
 ---
