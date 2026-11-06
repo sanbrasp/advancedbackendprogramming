@@ -34,6 +34,58 @@ GET {{host}}/api/tickets/1
 Accept: application/json
 X-Api-Key: anything
 
+### POST ticket ID 2
+POST {{host}}/api/tickets
+Content-Type: application/json
+X-Api-Key: anything
+
+{
+  "id": 2,
+  "user": "sandra",
+  "dateOfIssue": "2026-11-06T12:00:00Z",
+  "dateOfDeadline": "2026-11-13T12:00:00Z",
+  "description": "Printer is broken"
+}
+
+### POST ticket ID 3
+POST {{host}}/api/tickets
+Content-Type: application/json
+X-Api-Key: anything
+
+{
+  "id": 3,
+  "user": "sandra",
+  "dateOfIssue": "2026-11-06T12:00:00Z",
+  "dateOfDeadline": "2026-11-13T12:00:00Z",
+  "description": "No network"
+}
+
+### POST ticket ID 4
+POST {{host}}/api/tickets
+Content-Type: application/json
+X-Api-Key: anything
+
+{
+  "id": 4,
+  "user": "sandra",
+  "dateOfIssue": "2026-11-06T12:00:00Z",
+  "dateOfDeadline": "2026-11-13T12:00:00Z",
+  "description": "Monitor flickers"
+}
+
+### POST too long description (400)
+POST {{host}}/api/tickets
+Content-Type: application/json
+X-Api-Key: anything
+
+{
+  "id": 5,
+  "user": "sandra",
+  "dateOfIssue": "2026-11-06T12:00:00Z",
+  "dateOfDeadline": "2026-11-13T12:00:00Z",
+  "description": "This description is far longer than the forty-five characters that the setting allows"
+}
+
 ### GET Diagnostics (operation ID)
 GET {{host}}/api/Diagnostics
 Accept: application/json
