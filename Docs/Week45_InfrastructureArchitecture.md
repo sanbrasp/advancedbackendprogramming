@@ -763,6 +763,15 @@ git check-ignore -v HelpDesk.Api/http-client.private.env.json   (ignored by .git
 
 Only `http-client.private.env.json` in the working folder contains the key, and Git ignores the file.
 
+**Reasons We Don't Want Secrets in the JSON File**
+
+- Git remembers. One committed, it never goes away
+- Pushing copies the key to every clone and fork. You can't take it back, only rotate the key
+- It's in plain text, in a file that ships with the code. No protection. 
+
+The short explanation is: 
+"You don't want just anyone with access to the repo to get a hold of your secrets."
+
 [Option Binders Populate Init](https://stackoverflow.com/questions/65131217/are-c-sharp-9-init-properties-safe-to-use-for-configuration-binding-ioptions)  
 [HTTP Client variables](https://www.jetbrains.com/help/idea/2025.3/http-client-variables.html)  
 [Safe Storage ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0&tabs=windows%2Cpowershell)  
