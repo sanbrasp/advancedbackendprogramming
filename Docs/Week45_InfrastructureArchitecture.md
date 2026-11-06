@@ -31,7 +31,7 @@ Goals for this project:
 - [x] 3 I can write a custom middleware class
 - [x] 4 I can distinguish between middleware and filters and explain their use cases
 - [x] 5 I can register services in the DI container with the right lifetime
-- [ ] 6 I can use constructor injection and explain why Service Locator is an anti-pattern
+- [ ] 6 I can use constructor injection and explain why Service Locator is an antipattern
 - [ ] 7 I can set up the Options pattern with validation and use IOptions in a controller
 - [ ] 8 I can explain why secrets don't belong in appsettings.json
 - [ ] 9 I can describe the responsibility of each layer and draw a dependency diagram
@@ -575,6 +575,28 @@ Time: 1 ms
 The singleton id stays the same until the app restarts, which is the "app lifetime" in the table above.
 After a restart, it gets a new one.
 
+**Demonstration of trying to use Scoped in the constructor**  
+
+I temporarily moved the scoped service (`IOperationScoped`) out of `InvokeAsync` and into the constructor instead, 
+and tried to run the program.  
+The main error (because the program would not start), was this:  
+
+```terminaloutput
+Cannot resolve scoped service `IOperationScoped` from root provider
+```
+It traces to `ApplicationBuilder.Build()` and `CreateMiddleware()`.  
+
+- `Build() / CreateMiddleware()` - the middleware object is created once at startup, when the pipeline is built.  
+- `root provider` - at startup there are no requests yet, so there is no scope. Only the app-wide root container.  
+- `scoped service` - A scoped service only exists inside a request scope.
+
+The middleware is built once at startup from the root provider, but a scoped service only exists per request, 
+so it cannot be given to the middleware through its constructor. Scoped and transient services therefore go into
+`InvokeAsync`, which runs once per request.
+
+This check is on in Development, where it stops the app at startup. Without it, a long-lived object could silently 
+keep one scoped instance forever.
+
 [🏠 To top](#overview)
 
 ---
@@ -602,6 +624,55 @@ public class TicketsController : ControllerBase
 Microsoft recommends requesting dependencies as constructor parameters and avoiding the service locator 
 pattern, for example calling `GetService` to fetch a service yourself.
 
+
+**Service Locator Example (not in the project code)**  
+
+```csharp
+public class DiagnosticsController : ControllerBase
+{
+    [HttpGet("locator")]
+    public IActionResult GetWithLocator()
+    {
+        var tickets = HttpContext.RequestServices.GetRequiredService<ITicketService>();
+        return Ok(tickets.GetAll());
+    }
+}
+```
+
+- The class asks the container for what it needs, when it needs it
+- Both work and return the same tickets
+- The difference is in how the code is built and used:
+
+|                              | Service Locator                                                                           | Constructor Injection                                        |
+|------------------------------|-------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| What does the class show?    | Nothing. The constructor says nothing, and the dependency is hidden inside a method body. | The constructor lists exactly what the class needs.          |
+| Testing                      | A test has to build a service provider and attach it to an `HttpContext`.                 | `new TicketsController(fakeService)` is all that is needed. |
+| Missing registration         | Fails only when that action runs.                                                         | Fails whenever the class is created.                         |
+| Ways of getting dependencies | The class mixes this one with constructor parameters.                                     | One way, used everywhere.                                    |
+
+**Why Constructor Injection is Better**  
+
+- No hidden dependencies
+- Easier to test
+- One way of getting dependencies
+
+Microsoft also recommends using constructor parameters and to avoid `GetService`-style calls.
+
+Transient is new on every request for the service, scoped is one per HTTP request, singleton is one for the whole app.  
+A singleton that holds a scoped service keeps it alive for the whole app, so it stops behaving as scoped, and Development
+scope validation reports it.  
+
+**Why Service Locator is Antipattern**
+
+- The class hides what it depends on, because the dependencies don't show in the constructor. 
+- API errors shift from compile-time to runtime.  
+- It is harder to test, since a test has to build a service provider instead of passing a fake. And it mixes two ways
+  of getting dependencies. Must instantiate, configure and isolate global or static registry before running each 
+  individual test
+- Encapsulation violation
+- Violates interface segregation - by giving a class access to the entire Service Locator, it is granted access to 
+  every registered service in the system
+- Creates a "static cling" that binds classes rigidly to the context of that specific registry
 
 [Dependency injection in ASP.NET Core (Microsoft)](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-10.0)
 
