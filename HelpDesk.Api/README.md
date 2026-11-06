@@ -121,17 +121,21 @@ flowchart LR
   M --> TS
   TS --> T
   T --> C
+  T --> I[IOptions of TicketSettings]
+  O --> A[appsettings.json, Tickets section]
 ```
 
-- The controller depends on `ITicketService` interface, not on the concrete class
-- `Program.cs` registers `InMemoryTicketRepository` as a singleton, so all requests share one store
-- `ConcurrentDictionary` is used because that one instance is shared by concurrent requests, and for thread-safety
-- Middleware runs in registration order. `ApiKeyMiddleware` short-circuits the request when the header is missing
+- The controller depends on `ITicketService` interface, not on the concrete class.
+- `Program.cs` registers `InMemoryTicketRepository` as a singleton, so all requests share one store.
+- `ConcurrentDictionary` is used because that one instance is shared by concurrent requests, and for thread-safety.
+- Middleware runs in registration order. `ApiKeyMiddleware` short-circuits the request when the header is missing.
 - `AuditActionFilter` is applied to `TicketsController` with `[ServiceFilter]` and runs only for controller actions, 
   not for requests stopped by middleware.
 - `ValidateIdFilter` is applied to `GetById` only and returns `400` when the id is 0 or lower, before the action runs.  
 - `ITicketService` and `TicketService` are registered as scoped.
 - The service depends on `ITicketRepository`.
+- `TicketsController` reads `MaxTicketsReturned` and `MaxDescriptionLength` through `IOptions<TicketSettings>`.
+- `TicketSettings` is bound to the `Tickets` section of `appsettings.json` and validated when the app starts.
 
 ---
 
