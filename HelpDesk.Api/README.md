@@ -132,7 +132,7 @@ flowchart LR
 - The controller depends on `ITicketService` interface, not on the concrete class.
 - `Program.cs` registers `InMemoryTicketRepository` as a singleton, so all requests share one store.
 - `ConcurrentDictionary` is used because that one instance is shared by concurrent requests, and for thread-safety.
-- Middleware runs in registration order. `ApiKeyMiddleware` short-circuits the request when the header is missing.
+- Middleware runs in registration order. `ApiKeyMiddleware` short-circuits the request when the header is missing or wrong.
 - `AuditActionFilter` is applied to `TicketsController` with `[ServiceFilter]` and runs only for controller actions, 
   not for requests stopped by middleware.
 - `ValidateIdFilter` is applied to `GetById` only and returns `400` when the id is 0 or lower, before the action runs.  

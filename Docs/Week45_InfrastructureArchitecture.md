@@ -711,6 +711,20 @@ than `MaxDescriptionLength`, before the ticket is stored.
 Tested with four tickets in the store: `GET /api/tickets` returned three (with the limit set to 3, this is later outdated).  
 A POST with a long description returned 400.
 
+**Lifetime options**
+
+For THIS project, I chose to go with `IOptions`, because it is a little easier to implement. It does not support reading of 
+configuration data after the app has started, which is fine for this project, because I know the key won't change after startup. 
+It is registered as a `singleton` service, and can therefore be injected into any service lifetime.
+
+The `IOptionsSnapshot` can read updated data after starting. It is useful in scenarios where options should be 
+recomputed on every request, which is why it is registered as a `scoped` service. It can therefore not be injected into 
+a singleton service. It supports Named Options.
+
+`IOptionsMonitor` can be used to retrieve options and manage options notifications for when something changes. 
+It is registered as a `singleton` service and can be injected into any service lifetime. It supports change notifications,
+Named Options, reloadable configurations, and selective options invalidation.
+
 [Options Pattern in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/options?view=aspnetcore-10.0)  
 [Configuration in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-10.0)  
 [Safe Storage ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0&tabs=windows%2Cpowershell)  
