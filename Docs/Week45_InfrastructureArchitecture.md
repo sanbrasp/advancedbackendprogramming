@@ -34,8 +34,8 @@ Goals for this project:
 - [x] 6 I can use constructor injection and explain why Service Locator is an antipattern
 - [x] 7 I can set up the Options pattern with validation and use IOptions in a controller
 - [x] 8 I can explain why secrets don't belong in appsettings.json
-- [ ] 9 I can describe the responsibility of each layer and draw a dependency diagram
-- [ ] 10 I can compare technical layering and feature-based structure
+- [x] 9 I can describe the responsibility of each layer and draw a dependency diagram
+- [x] 10 I can compare technical layering and feature-based structure
 
 ---
 
@@ -816,10 +816,60 @@ flowchart LR
 
 ### Compare Technical Layering and Feature-Based Structure
 
+This project uses `technical layering`. It groups code by what _kind_ of code it is.  
+
+```text
+Core/              ->     Records/  Interfaces/  Services/
+Infrastructure/    ->     Data/
+Api/               ->     Controllers/  Filters/  Middleware/
+```
+
+Some developers use `Feature based`, where code is grouped by what the app does.
+```text
+Features/
+├── Tickets/    TicketRecord, TicketsController, TicketService, TicketRepository
+└── Comments/   CommentRecord, CommentsController, CommentService, CommentRepository
+```
+
+Per now in my journey I prefer technical layering.
+
+
+|	|  Technical layering	 | Feature-based |
+|----|-------------------------|-------------|
+|Groups code by| 	Technical role|	Feature |
+|Adding “Comments”	|Touches several projects and folders: Core, Infrastructure and Api	|Mostly one new folder|
+|Shared business rules|	One home, so no duplication	|Tend to get duplicated across features unless extracted|
+|Boundaries	|Separate projects, enforced at compile time|	In one project, rely on discipline|
+|Ceremony|	More: interfaces and layers even for simple features	|Less boilerplate|
+|Team work|	Features collide in shared controllers and services|	Features stay separate, with smaller diffs|
+|Fits best|	Shared, complex business logic and strict boundaries|	Independent features and CRUD-heavy apps|
+
+**Not done:** the Comments exercise (adding ticket comments in both structures) was skipped this week.
+It is a possible follow-up to compare the two structures by actually building one.
+
 [🏠 To top](#overview)
 
 ---
 
 ## Sources
+
+[Handle errors in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling?view=aspnetcore-10.0)  
+[ASP.NET Core Middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-10.0)  
+[Write custom ASP.NET Core middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/write?view=aspnetcore-10.0)  
+[Routing in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-10.0)  
+[Filters in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-10.0)  
+[Dependency injection in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-10.0)  
+[Options pattern in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/options?view=aspnetcore-10.0)  
+[Configuration in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-10.0)  
+[Safe storage of app secrets in development](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0&tabs=windows%2Cpowershell)  
+[Use generated OpenAPI documents](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/using-openapi-documents)  
+[OpenAPI basic structure](https://docs.bump.sh/openapi/v3.2/understanding-structure/basic-structure/)  
+[Swagger UI configuration and customization (Swashbuckle)](https://github.com/domaindrivendev/Swashbuckle.AspNetCore/blob/master/docs/configure-and-customize-swaggerui.md)  
+[Rider HTTP request syntax](https://www.jetbrains.com/help/rider/Exploring_HTTP_Syntax.html)  
+[HTTP Client variables](https://www.jetbrains.com/help/idea/2025.3/http-client-variables.html)  
+[Are C# 9 init properties safe for configuration binding (IOptions)?](https://stackoverflow.com/questions/65131217/are-c-sharp-9-init-properties-safe-to-use-for-configuration-binding-ioptions)  
+[When to choose vertical slice architecture over layered architecture](https://milanjovanovic.tech/blog/when-to-choose-vertical-slice-architecture)
+
+---
 
 [🏠 To top](#overview)
