@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
-using HelpDesk.Api.Interfaces;
-using HelpDesk.Api.Records;
+using HelpDesk.Core.Interfaces;
+using HelpDesk.Core.Records;
 
-namespace HelpDesk.Api.Data;
+namespace HelpDesk.Infrastructure.Data;
 
 public class InMemoryTicketRepositoryRepository : ITicketRepository
 {

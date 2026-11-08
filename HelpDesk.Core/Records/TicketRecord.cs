@@ -1,4 +1,4 @@
-namespace HelpDesk.Api.Records;
+namespace HelpDesk.Core.Records;
 
 public record TicketRecord(
     int Id, string User, DateTime DateOfIssue, 

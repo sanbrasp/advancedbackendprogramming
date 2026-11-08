@@ -1,11 +1,13 @@
 using System.Text.Json.Serialization;
-using HelpDesk.Api.Data;
 using HelpDesk.Api.Filters;
 using HelpDesk.Api.Interfaces;
 using HelpDesk.Api.Middleware;
 using HelpDesk.Api.Models;
-using HelpDesk.Api.Services;
 using HelpDesk.Api.Settings;
+using HelpDesk.Core;
+using HelpDesk.Core.Interfaces;
+using HelpDesk.Core.Services;
+using HelpDesk.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 

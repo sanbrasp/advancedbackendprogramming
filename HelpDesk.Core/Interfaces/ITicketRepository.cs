@@ -1,16 +1,16 @@
-using HelpDesk.Api.Records;
+using HelpDesk.Core.Records;
 
-namespace HelpDesk.Api.Interfaces;
+namespace HelpDesk.Core.Interfaces;
 
-public interface ITicketService
+public interface ITicketRepository
 {
     IEnumerable<TicketRecord> GetAll();
     
     bool TryGet(int id, out TicketRecord? ticket);
-
+    
     bool TryAdd(TicketRecord addedTicket);
     
-    bool TryUpdate(int id, TicketRecord ticket, out TicketRecord? updatedTicket);
+    bool TryUpdate(int id,TicketRecord ticket, out TicketRecord? updatedTicket);
     
     bool TryRemove(int id, out TicketRecord? removedTicket);
 }

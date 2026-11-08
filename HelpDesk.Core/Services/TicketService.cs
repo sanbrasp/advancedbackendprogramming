@@ -1,7 +1,7 @@
-using HelpDesk.Api.Interfaces;
-using HelpDesk.Api.Records;
+using HelpDesk.Core.Interfaces;
+using HelpDesk.Core.Records;
 
-namespace HelpDesk.Api.Services;
+namespace HelpDesk.Core.Services;
 
 public class TicketService : ITicketService
 {

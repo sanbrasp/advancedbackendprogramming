@@ -1,7 +1,9 @@
 using HelpDesk.Api.Filters;
 using HelpDesk.Api.Interfaces;
-using HelpDesk.Api.Records;
 using HelpDesk.Api.Settings;
+using HelpDesk.Core;
+using HelpDesk.Core.Interfaces;
+using HelpDesk.Core.Records;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
