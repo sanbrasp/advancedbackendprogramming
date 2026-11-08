@@ -4,18 +4,32 @@ Projects, notes, code and resources for the Advanced Backend Programming course 
 
 ---
 
-## Solution Structure
+## Project Structure
+
+The solution has three projects. Arrows in the diagram mean "references".
 
 ```text
-AdvancedProgrammingSolution/
-├── HelpDesk.Api/           Week 45 goals
-│   └── README.ms           Helpdesk API README
-├── WebApiBasics/           Week 44 goals
-│   └── README.md           Web API Basics README
-├── Docs/
-│   └── Week44_Introduction.md
-│   └── Week45_InfrastructureArchitecture.md
-└── README.md               Solution README
+HelpDesk.Core/                      What a ticket is and what the app does with it
+├── Interfaces/
+│   ├── ITicketRepository.cs        Contract for the ticket store
+│   └── ITicketService.cs           Contract for the ticket service
+├── Records/
+│   └── TicketRecord.cs             Ticket data model (record)
+└── Services/
+    └── TicketService.cs            Implements ITicketService, calls the repository
+
+HelpDesk.Infrastructure/            Technical details Core needs but does not care about
+└── Data/
+    └── InMemoryTicketRepository.cs In-memory store, implements ITicketRepository
+
+HelpDesk.Api/                       HTTP entry point and wiring
+├── Controllers/                    Tickets, Diagnostics (lifetime demo), Error
+├── Filters/                        AuditActionFilter, ValidateIdFilter
+├── Interfaces/                     IOperation* (lifetime demo)
+├── Middleware/                     ApiKeyMiddleware, RequestTimingMiddleware (+ extension)
+├── Models/                         Operation (lifetime demo)
+├── Settings/                       SecuritySettings, TicketSettings
+└── Program.cs                      Service registration and middleware pipeline
 ```
 
 ---

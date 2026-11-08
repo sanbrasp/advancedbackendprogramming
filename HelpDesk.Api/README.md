@@ -143,6 +143,27 @@ flowchart LR
 
 ---
 
+### Layers
+
+| Project | Responsibility | References |
+|---|---|---|
+| `HelpDesk.Core` | The business: the ticket entity, the business logic and the interfaces it needs from the outside. Knows nothing about HTTP or storage. | Nothing |
+| `HelpDesk.Infrastructure` | Technical details: where tickets are stored. Implements Core's interfaces. | Core |
+| `HelpDesk.Api` | HTTP: controllers, middleware, filters, settings and `Program.cs`, where everything is wired together. | Core, Infrastructure |
+
+```mermaid
+flowchart LR
+  Api[HelpDesk.Api] --> Core[HelpDesk.Core]
+  Api --> Infra[HelpDesk.Infrastructure]
+  Infra --> Core
+```
+
+- Core depends on nothing, so it can be changed and tested without HTTP or a database.
+- `ITicketRepository` is defined in Core and implemented in Infrastructure. Core says what it needs, and Infrastructure provides it.
+- Api references Infrastructure only to register `InMemoryTicketRepository` in `Program.cs`.
+
+---
+
 ## Sources
 
 [ASP.NET Core Middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-10.0)  

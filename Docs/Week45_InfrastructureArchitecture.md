@@ -782,14 +782,33 @@ The short explanation is:
 
 ### Responsibility of Each Layer / Dependency Diagram
 
-`HelpDesk.Api`  
-`HelpDesk.Core`  
-`HelpDesk.Infrastructure`  
+Split `HelpDesk.Api` into three projects: `HelpDesk.Core`, `HelpDesk.Infrastructure` and `HelpDesk.Api`.
 
-Plan the new structure:  
-- Does it mention HTTP or ASP.NET? That’s Api.
-- Is it about how data is stored? That’s Infrastructure.
-- Is it about what a ticket is or does? That’s Core.
+For each file I asked three questions:
+1. Does it mention HTTP or ASP.NET? Then it's Api.
+2. Is it about how data is stored? Then it's Infrastructure.
+3. Is it about what a ticket is or does? Then it's Core.
+
+| Project | Contains | References |
+|---|---|---|
+| Core | `TicketRecord`, `ITicketRepository`, `ITicketService`, `TicketService` | Nothing |
+| Infrastructure | `InMemoryTicketRepository` | Core |
+| Api | Controllers, filters, middleware, settings, the lifetime demo, `Program.cs` | Core, Infrastructure |
+
+```mermaid
+flowchart LR
+  Api[HelpDesk.Api] --> Core[HelpDesk.Core]
+  Api --> Infra[HelpDesk.Infrastructure]
+  Infra --> Core
+```
+
+- Moved the files with Rider's Refactor → Move (F6), which updated the namespaces and `using` lines.
+- The types that other projects use had to become `public`.
+- I guessed wrong on two things: the controllers belong in Api, because they derive from `ControllerBase`, 
+  which is ASP.NET, and the lifetime demo (`Operation`, `IOperation*`) belongs in Api, because it isn't business logic.
+- An interface belongs to the layer that *uses* it. Core defines `ITicketRepository`, and Infrastructure implements it.
+- Api references Infrastructure only to register the repository in `Program.cs`.
+- Tested after the split: build passes, and GET all (200), POST (201), GET by id (200), id 0 (400) and no key (401) all behave as before.
 
 [🏠 To top](#overview)
 
