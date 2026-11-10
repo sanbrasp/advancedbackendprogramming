@@ -131,9 +131,90 @@ Response:
 
 ## Configure Serilog From appsettings.json with Console and File sinks
 
+Added the NuGet package `Serilog.AspNetCore` to `HelpDesk.Api`. The sinks are not hard-coded. They come from a top-level `Serilog` section in `appsettings.json`:
+
+```json
+"Serilog": {
+  "Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File" ],
+  "MinimumLevel": "Information",
+  "WriteTo": [
+    { "Name": "Console" },
+    { "Name": "File", "Args": { "path": "Logs/log.txt" } }
+  ]
+},
+```
+
+`Using` is a list of sink packages. `WriteTo` is a list of sink objects, and each has a `Name`. The `File` sink also needs `Args` with a `path`.
+
+In `Program.cs` there are two loggers, as in the Serilog README:
+
+```csharp
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+// ...
+builder.Services.AddSerilog((services, lc) => lc
+    .ReadFrom.Configuration(builder.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext());
+```
+
+- The bootstrap logger covers start-up, before the configuration is read ("Starting up"). `CreateBootstrapLogger()` lets the final logger replace it.
+- `AddSerilog()` with no arguments never reads `appsettings.json`, so only the Console sink would exist.
+- Sinks are not set in code, so they can change in JSON without a rebuild.
+- The old `Logging` section is not read by Serilog.
+- `Logs/` is in `.gitignore`, because logs are runtime output and often contain request data.
+
+Result: the same lines appear in the console and in `Logs/log.txt`. The file has a full date and time offset on each line, and it starts at "Now listening", because the bootstrap logger writes to the console only.
+
+[Serilog.AspNetCore](https://github.com/serilog/serilog-aspnetcore)  
+[Serilog.Settings.Configuration](https://github.com/serilog/serilog-settings-configuration)
+
+[🏠 To top](#overview)
+
 ---
 
 ## Use Structured Logging
+
+Replaced the `Console.WriteLine` calls in `RequestTimingMiddleware` and `AuditActionFilter` with `ILogger<T>` and message templates.
+
+My first version used string interpolation inside `LogInformation`:
+
+```csharp
+_logger.LogInformation($"{context.Request.Method} {context.Request.Path} ...");
+```
+
+That produces one finished string, so the values are not separate properties. A message template has named placeholders, and the values are passed as arguments:
+
+```csharp
+_logger.LogInformation("{Method} {Path} {ElapsedMs} ms",
+    context.Request.Method, context.Request.Path, stopwatch.ElapsedMilliseconds);
+
+_logger.LogInformation("Operation IDs: Singleton {Singleton}, Scoped {Scoped}, Transient {Transient}",
+    _singletonOperation.OperationId, scopedOperation.OperationId, transientOperation.OperationId);
+```
+
+In the filter: `"Action {Action} starting"` and `"Action {Action} finished"`, with `context.ActionDescriptor.DisplayName`.
+
+```terminaloutput
+[19:00:57 INF] Action HelpDesk.Api.Controllers.TicketsController.GetAll (HelpDesk.Api) starting
+[19:00:57 INF] Action HelpDesk.Api.Controllers.TicketsController.GetAll (HelpDesk.Api) finished
+[19:00:57 INF] GET /api/Tickets 83 ms
+[19:00:57 INF] Operation IDs: Singleton 5960, Scoped 1470, Transient 8565
+```
+
+- Placeholders are matched by position, so the arguments must be in the same order as the placeholders. Names use PascalCase.
+- With a template, `Method` and `ElapsedMs` stay separate named properties, so they can be searched and filtered. A JSON formatter such as `RenderedCompactJsonFormatter` shows them (mentioned in the Serilog README).
+- I left the time out of the filter message, because Serilog stamps every line already.
+- `ILogger<T>` is registered as Singleton ("Framework-provided services" in the DI docs). That is why it is safe in the middleware's constructor, which is built once at startup.
+- `ILogger<T>` goes in the **constructor** only. An interface method like `OnActionExecuted` has a fixed signature, so extra parameters give a compile error. Only the convention-based `InvokeAsync` of middleware can take extra services.
+- Rider showed CA1873 ("evaluation of this argument may be expensive"). It is a suggestion. The arguments are plain property reads, so I left it, as the docs allow.
+
+[Logging in .NET and ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-10.0)  
+[Dependency injection in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-10.0)  
+[CA1873: Avoid potentially expensive logging](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+
+[🏠 To top](#overview)
 
 ---
 
