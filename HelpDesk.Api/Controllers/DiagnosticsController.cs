@@ -27,4 +27,11 @@ public class DiagnosticsController : ControllerBase
             _transient = _transient.OperationId, _scoped = _scoped.OperationId, _singleton = _singleton.OperationId
         });
     }
+
+    [HttpGet]
+    [Route("throw")]
+    public IActionResult TempThrow()
+    {
+        throw new Exception("This is a test exception");
+    }
 }
