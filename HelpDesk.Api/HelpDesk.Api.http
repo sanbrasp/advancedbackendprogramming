@@ -77,3 +77,8 @@ X-Api-Key: {{apiKey}}
 GET {{host}}/api/Diagnostics
 Accept: application/json
 X-Api-Key: {{apiKey}}
+
+### Test Endpoint that throws
+GET {{host}}/api/Diagnostics/throw
+Accept: application/json
+X-Api-Key: {{apiKey}}
