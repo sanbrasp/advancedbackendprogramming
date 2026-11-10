@@ -4,7 +4,7 @@ using HelpDesk.Core.Records;
 
 namespace HelpDesk.Infrastructure.Data;
 
-public class InMemoryTicketRepositoryRepository : ITicketRepository
+public class InMemoryTicketRepository : ITicketRepository
 {
     private static readonly DateTime _dateOfDeadline = DateTime.UtcNow.AddDays(14);
     
