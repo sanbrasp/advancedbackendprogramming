@@ -4,13 +4,20 @@ namespace HelpDesk.Api.Filters;
 
 internal class AuditActionFilter : IActionFilter
 {
+    private readonly ILogger<AuditActionFilter> _logger;
+
+    public AuditActionFilter(ILogger<AuditActionFilter> logger)
+    {
+        _logger = logger;
+    }
+    
     public void OnActionExecuting(ActionExecutingContext context)
     {
-        Console.WriteLine($"==Before==\nAction: {context.ActionDescriptor.DisplayName} Time: {DateTime.UtcNow}");
+        _logger.LogInformation("Action {Action} starting", context.ActionDescriptor.DisplayName);
     }
 
     public void OnActionExecuted(ActionExecutedContext context)
     {
-        Console.WriteLine($"==After==\nAction: {context.ActionDescriptor.DisplayName} Time: {DateTime.UtcNow}");
+        _logger.LogInformation("Action {Action} finished", context.ActionDescriptor.DisplayName);
     }
 }
