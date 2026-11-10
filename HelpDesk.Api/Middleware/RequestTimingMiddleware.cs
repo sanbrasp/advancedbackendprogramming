@@ -7,14 +7,18 @@ internal class RequestTimingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IOperationSingleton _singletonOperation;
+    private readonly ILogger<RequestTimingMiddleware> _logger;
 
-    public RequestTimingMiddleware(RequestDelegate next, IOperationSingleton singletonOperation)
+    public RequestTimingMiddleware(RequestDelegate next, IOperationSingleton singletonOperation,
+        ILogger<RequestTimingMiddleware> logger)
     {
         _next = next;
         _singletonOperation = singletonOperation;
+        _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context, IOperationScoped scopedOperation, IOperationTransient transientOperation)
+    public async Task InvokeAsync(HttpContext context, IOperationScoped scopedOperation,
+        IOperationTransient transientOperation)
     {
         var stopwatch = Stopwatch.StartNew();
 
@@ -22,8 +26,10 @@ internal class RequestTimingMiddleware
 
         var statusCode = context.Response.StatusCode;
 
-        Console.WriteLine(
-            $"{context.Request.Method} {context.Request.Path} {statusCode} {stopwatch.ElapsedMilliseconds} ms\n" +
-            $"Singleton: {_singletonOperation.OperationId}\nScoped: {scopedOperation.OperationId}\nTransient: {transientOperation.OperationId}\nTime: {stopwatch.ElapsedMilliseconds} ms");
+        _logger.LogInformation("{Method} {Path} {ElapsedMs} ms",
+            context.Request.Method, context.Request.Path, stopwatch.ElapsedMilliseconds);
+        
+        _logger.LogInformation("Operation IDs: Singleton {Singleton}, Scoped {Scoped}, Transient {Transient}",
+            _singletonOperation.OperationId, scopedOperation.OperationId, transientOperation.OperationId);
     }
 }
