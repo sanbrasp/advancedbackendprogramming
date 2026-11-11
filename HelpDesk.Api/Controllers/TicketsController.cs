@@ -1,3 +1,4 @@
+using HelpDesk.Api.DTOs;
 using HelpDesk.Api.Filters;
 using HelpDesk.Api.Interfaces;
 using HelpDesk.Api.Settings;
@@ -41,23 +42,27 @@ public class TicketsController : ControllerBase
         {
             return NotFound();
         }
-        
+
         return Ok(ticket);
     }
 
     [HttpPost]
-    public ActionResult<TicketRecord> Create(TicketRecord ticket)
+    public ActionResult<TicketRecord> Create(CreateTicketRequestDto ticketRequestDto)
     {
-        if (ticket.Description.Length > _ticketSettings.Value.MaxDescriptionLength)
+        if (ticketRequestDto.Description.Length > _ticketSettings.Value.MaxDescriptionLength)
         {
             return BadRequest();
         }
-        
+
+        var ticket = new TicketRecord(ticketRequestDto.Id, ticketRequestDto.User, ticketRequestDto.DateOfIssue,
+            ticketRequestDto.DateOfDeadline,
+            ticketRequestDto.Description);
+
         if (!_ticketService.TryAdd(ticket))
         {
             return Conflict();
         }
-        
+
         return CreatedAtAction(nameof(GetById), new { id = ticket.Id }, ticket);
     }
 
@@ -68,7 +73,7 @@ public class TicketsController : ControllerBase
         {
             return NotFound();
         }
-        
+
         return Ok(updatedTicket);
     }
 
@@ -79,7 +84,7 @@ public class TicketsController : ControllerBase
         {
             return NotFound();
         }
-        
+
         return Ok(removedTicket);
     }
 }
