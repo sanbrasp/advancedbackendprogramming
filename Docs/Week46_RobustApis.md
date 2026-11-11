@@ -29,7 +29,7 @@ Learning goals for this week:
 - [x] I can implement GlobalExceptionHandler with Problem Details and traceId
 - [x] I can configure Serilog from appsettings.json with Console and File sinks
 - [x] I can use structured logging (message templates) instead of string interpolation
-- [ ] I can explain what traceId is and why it is important for correlation
+- [x] I can explain what traceId is and why it is important for correlation
 - [ ] I can add validation with Data Annotations to a DTO
 - [ ] I can implement a FluentValidation validator in a separate class
 - [ ] I can justify when I would use Data Annotations vs. FluentValidation
@@ -116,6 +116,9 @@ internal class GlobalExceptionHandler : IExceptionHandler
 }
 ```
 
+**Update 11 Nov:** the handler now also takes `ILogger<GlobalExceptionHandler>` and logs the exception with the 
+trace ID. See the traceId section.
+
 Response:
 
 ```json
@@ -130,7 +133,9 @@ Response:
 - `TryHandleAsync` returns `true` for "handled, and I wrote the whole response", and `false` to pass the exception on. Returning `true` without writing anything gives a 404.
 - I left `Detail` out on purpose. `exception.Message` can reveal internals to the client.
 - The handler is registered in DI, so it can take services in its constructor. An endpoint like `ErrorController` could do that too, but a handler class is easier to swap in tests.
-- `RequestTimingMiddleware` printed nothing for the failing request. The exception skips the code after `await _next(context)`, and the exception handler sits outside the timing middleware. This is a blind spot, which task 2.4 fixes. **Correction:** task 2.4 does not fix this. The planned fix is task 3.2: the handler logs the exception itself.
+- `RequestTimingMiddleware` printed nothing for the failing request. The exception skips the code after `await _next(context)`, and the exception handler sits outside the timing middleware. 
+  This is a blind spot, which task 2.4 fixes. **Correction:** task 2.4 does not fix this. The planned fix is task 3.2: the handler logs the exception itself.  
+  **Update 11 Nov:** done in task 3.2, see the traceId section.
 - RFC 7807 from the lecture has been replaced by RFC 9457. The members are the same.
 
 [Handle errors in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling?view=aspnetcore-10.0)  
@@ -259,6 +264,54 @@ In the filter: `"Action {Action} starting"` and `"Action {Action} finished"`, wi
 ---
 
 ## Explain what `traceId` is and why it is important
+
+A `traceId` is a unique ID for one request. The client gets it in the Problem Details response, and the same value is written to the log. A client can quote it, and I can find the exact log entry with the exception and stack trace.
+
+**Logging the exception (task 3.2).** `GlobalExceptionHandler` now takes `ILogger<GlobalExceptionHandler>` in its constructor and logs before it writes the response:
+
+```csharp
+_logger.LogError(exception, "Error has occurred. Refer to this trace ID: {TraceId}",
+    Activity.Current?.Id ?? httpContext.TraceIdentifier);
+```
+
+- The exception is the **first** argument. That makes Serilog write the stack trace under the line.
+- The level is Error, because the request was stopped by a failure.
+
+**First version did not match (task 3.3).** I first logged `httpContext.TraceIdentifier`:
+
+| Where | Value | What it is |
+|---|---|---|
+| Log | `0HNQ021SEVDIO:00000003` | `httpContext.TraceIdentifier`, the server's own request ID |
+| Response | `00-6109740f51eaf490dac16d77680d6035-17c6e8b3589f22c6-00` | `Activity.Current.Id`, the W3C trace ID |
+
+The framework sets the response value with `Activity.Current?.Id ?? httpContext?.TraceIdentifier`, so the log must use the same expression. The W3C format is version, trace ID, parent ID and flags, and it is made to follow a request across several systems.
+
+**Result.** Log and response now match:
+
+```terminaloutput
+[17:34:59 ERR] Error has occurred. Refer to this trace ID: 00-ef9ed4d20e9596507e06b3c297e7555b-80c6db1c83a95dff-00
+```
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.1",
+  "title": "An unexpected error occurred",
+  "status": 500,
+  "traceId": "00-ef9ed4d20e9596507e06b3c297e7555b-80c6db1c83a95dff-00"
+}
+```
+
+- **Why not timestamps:** many requests can share the same timestamp, but each has one unique trace ID.
+- **The client does not see the stack trace.** The response body has only four fields. The stack trace goes to 
+  the console and `Logs/log.txt` only.
+- **Reading the stack trace:** the first `at` line is where the exception was thrown (`DiagnosticsController.cs:line 35`). 
+  Lines with a file path are my code, the rest is framework code.
+- `RequestTimingMiddleware` still prints no timing line for the failing request, but the failure now leaves an `ERR` entry.
+
+[DefaultProblemDetailsFactory.cs (ASP.NET Core source)](https://source.dot.net/Microsoft.AspNetCore.Mvc.Core/Infrastructure/DefaultProblemDetailsFactory.cs.html)  
+[W3C Trace Context](https://www.w3.org/TR/trace-context/)
+
+[🏠 To top](#overview)
 
 ---
 
