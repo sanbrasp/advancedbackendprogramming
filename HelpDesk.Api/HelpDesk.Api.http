@@ -73,6 +73,18 @@ X-Api-Key: {{apiKey}}
   "description": "Monitor flickers"
 }
 
+### POST Without Description
+POST {{host}}/api/tickets
+Content-Type: application/json
+X-Api-Key: {{apiKey}}
+
+{
+  "id": 5,
+  "user": "sandra",
+  "dateOfIssue": "2026-11-06T12:00:00Z",
+  "dateOfDeadline": "2026-11-13T12:00:00Z"
+}
+
 ### GET Diagnostics (operation ID)
 GET {{host}}/api/Diagnostics
 Accept: application/json
