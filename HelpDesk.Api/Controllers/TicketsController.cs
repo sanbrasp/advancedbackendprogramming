@@ -1,3 +1,4 @@
+using FluentValidation;
 using HelpDesk.Api.DTOs;
 using HelpDesk.Api.Filters;
 using HelpDesk.Api.Interfaces;
@@ -17,11 +18,14 @@ public class TicketsController : ControllerBase
 {
     private readonly ITicketService _ticketService;
     private readonly IOptions<TicketSettings> _ticketSettings;
+    private readonly IValidator<CreateTicketRequestDto> _validator;
 
-    public TicketsController(ITicketService ticketService, IOptions<TicketSettings> ticketSettings)
+    public TicketsController(ITicketService ticketService, IOptions<TicketSettings> ticketSettings,
+        IValidator<CreateTicketRequestDto> validator)
     {
         _ticketService = ticketService;
         _ticketSettings = ticketSettings;
+        _validator = validator;
     }
 
 
@@ -49,9 +53,14 @@ public class TicketsController : ControllerBase
     [HttpPost]
     public ActionResult<TicketRecord> Create(CreateTicketRequestDto ticketRequestDto)
     {
-        if (ticketRequestDto.Description.Length > _ticketSettings.Value.MaxDescriptionLength)
+        var validationResult = _validator.Validate(ticketRequestDto);
+        if (!validationResult.IsValid)
         {
-            return BadRequest();
+            foreach (var error in validationResult.Errors)
+            {
+                ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+            }
+            return ValidationProblem(ModelState);
         }
 
         var ticket = new TicketRecord(ticketRequestDto.Id, ticketRequestDto.User, ticketRequestDto.DateOfIssue,
