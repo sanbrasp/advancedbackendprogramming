@@ -1,10 +1,13 @@
 using System.Text.Json.Serialization;
+using FluentValidation;
+using HelpDesk.Api.DTOs;
 using HelpDesk.Api.ExceptionHandlers;
 using HelpDesk.Api.Filters;
 using HelpDesk.Api.Interfaces;
 using HelpDesk.Api.Middleware;
 using HelpDesk.Api.Models;
 using HelpDesk.Api.Settings;
+using HelpDesk.Api.Validators;
 using HelpDesk.Core.Interfaces;
 using HelpDesk.Core.Services;
 using HelpDesk.Infrastructure.Data;
@@ -51,6 +54,7 @@ try
     
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
+    builder.Services.AddScoped<IValidator<CreateTicketRequestDto>, CreateTicketRequestDtoValidator>();
 
     var app = builder.Build();
 
