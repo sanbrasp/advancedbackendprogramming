@@ -30,9 +30,9 @@ Learning goals for this week:
 - [x] I can configure Serilog from appsettings.json with Console and File sinks
 - [x] I can use structured logging (message templates) instead of string interpolation
 - [x] I can explain what traceId is and why it is important for correlation
-- [ ] I can add validation with Data Annotations to a DTO
-- [ ] I can implement a FluentValidation validator in a separate class
-- [ ] I can justify when I would use Data Annotations vs. FluentValidation
+- [x] I can add validation with Data Annotations to a DTO
+- [x] I can implement a FluentValidation validator in a separate class
+- [x] I can justify when I would use Data Annotations vs. FluentValidation
 - [ ] I have completed at least three of the six core tasks
 - [x] I can identify at least two types of data leaks that must not occur in logs
 
@@ -40,9 +40,12 @@ Learning goals for this week:
 
 ## Difference Between Validation Errors and Unexpected Exceptions
 
-A **validation error** is the client's mistake: wrong or missing input. It is expected and predictable, so it gets a `4xx` status. It is not an exception. The action returns the result itself, and the exception handler is never involved. The client is told what to fix.
+A **validation error** is the client's mistake: wrong or missing input. It is expected and predictable, so it gets a 
+`4xx` status. It is not an exception. The action returns the result itself, and the exception handler is never involved. 
+The client is told what to fix.
 
-An **unexpected exception** is our mistake: a bug or a failure nobody planned for. It is thrown, and `GlobalExceptionHandler` catches it. The client gets a generic `500` with a `traceId`, and never the details. The details go to the log.
+An **unexpected exception** is our mistake: a bug or a failure nobody planned for. It is thrown, and `GlobalExceptionHandler` 
+catches it. The client gets a generic `500` with a `traceId`, and never the details. The details go to the log.
 
 | Case | Example in Help Desk | Status | An exception? | Who produces the response |
 |------|----------------------|--------|---------------|---------------------------|
@@ -51,7 +54,9 @@ An **unexpected exception** is our mistake: a bug or a failure nobody planned fo
 | Conflict | POST with an id that exists | 409 | No | The action's result |
 | Unexpected exception | `/api/Diagnostics/throw` | 500 | Yes | The exception handler |
 
-The two are treated differently because the client needs different things. After a validation error, it needs to know *what to change*. After an unexpected exception, there is nothing it can fix, and internal details could help an attacker. So the client gets a `traceId`, and the details stay on the server.
+The two are treated differently because the client needs different things. After a validation error, it needs to know 
+*what to change*. After an unexpected exception, there is nothing it can fix, and internal details could help an attacker.
+So the client gets a `traceId`, and the details stay on the server.
 
 [Handle errors in ASP.NET Core APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling-api?view=aspnetcore-10.0)
 
@@ -76,9 +81,11 @@ builder.Services.AddProblemDetails();
 app.UseExceptionHandler();
 ```
 
-`UseExceptionHandler()` without a path needs `AddProblemDetails()` as its fallback, otherwise the app throws at startup. `ErrorController` was deleted.
+`UseExceptionHandler()` without a path needs `AddProblemDetails()` as its fallback, otherwise the app throws at startup.
+`ErrorController` was deleted.
 
-**First version.** I built a `ProblemDetails` by hand and wrote it with `WriteAsJsonAsync`. It worked, but the response was poorer than the baseline:
+**First version.** I built a `ProblemDetails` by hand and wrote it with `WriteAsJsonAsync`. It worked, but the response 
+was poorer than the baseline:
 
 | | Content type | `type` | `traceId` |
 |---|---|---|---|
@@ -86,7 +93,8 @@ app.UseExceptionHandler();
 | Hand-written with `WriteAsJsonAsync` | `application/json` | no | no |
 | `IProblemDetailsService.TryWriteAsync` | `application/problem+json` | yes | yes |
 
-**Final version.** The handler gets `IProblemDetailsService` by constructor injection, sets the status code and writes through `TryWriteAsync`. The framework then builds the response the standard way.
+**Final version.** The handler gets `IProblemDetailsService` by constructor injection, sets the status code and writes
+through `TryWriteAsync`. The framework then builds the response the standard way.
 
 ```csharp
 internal class GlobalExceptionHandler : IExceptionHandler
@@ -130,11 +138,15 @@ Response:
 }
 ```
 
-- `TryHandleAsync` returns `true` for "handled, and I wrote the whole response", and `false` to pass the exception on. Returning `true` without writing anything gives a 404.
+- `TryHandleAsync` returns `true` for "handled, and I wrote the whole response", and `false` to pass the exception on.
+Returning `true` without writing anything gives a 404.
 - I left `Detail` out on purpose. `exception.Message` can reveal internals to the client.
-- The handler is registered in DI, so it can take services in its constructor. An endpoint like `ErrorController` could do that too, but a handler class is easier to swap in tests.
-- `RequestTimingMiddleware` printed nothing for the failing request. The exception skips the code after `await _next(context)`, and the exception handler sits outside the timing middleware. 
-  This is a blind spot, which task 2.4 fixes. **Correction:** task 2.4 does not fix this. The planned fix is task 3.2: the handler logs the exception itself.  
+- The handler is registered in DI, so it can take services in its constructor. An endpoint like `ErrorController` 
+could do that too, but a handler class is easier to swap in tests.
+- `RequestTimingMiddleware` printed nothing for the failing request. The exception skips the code after `await _next(context)`, 
+and the exception handler sits outside the timing middleware. 
+  This is a blind spot, which task 2.4 fixes. **Correction:** task 2.4 does not fix this. The planned fix is task 3.2: 
+the handler logs the exception itself.  
   **Update 11 Nov:** done in task 3.2, see the traceId section.
 - RFC 7807 from the lecture has been replaced by RFC 9457. The members are the same.
 
@@ -147,7 +159,8 @@ Response:
 
 ## Configure Serilog From appsettings.json with Console and File sinks
 
-Added the NuGet package `Serilog.AspNetCore` to `HelpDesk.Api`. The sinks are not hard-coded. They come from a top-level `Serilog` section in `appsettings.json`:
+Added the NuGet package `Serilog.AspNetCore` to `HelpDesk.Api`. The sinks are not hard-coded. They come from a top-level 
+`Serilog` section in `appsettings.json`:
 
 ```json
 "Serilog": {
@@ -160,7 +173,8 @@ Added the NuGet package `Serilog.AspNetCore` to `HelpDesk.Api`. The sinks are no
 },
 ```
 
-`Using` is a list of sink packages. `WriteTo` is a list of sink objects, and each has a `Name`. The `File` sink also needs `Args` with a `path`.
+`Using` is a list of sink packages. `WriteTo` is a list of sink objects, and each has a `Name`. The `File` sink also
+needs `Args` with a `path`.
 
 In `Program.cs` there are two loggers, as in the Serilog README:
 
@@ -175,13 +189,15 @@ builder.Services.AddSerilog((services, lc) => lc
     .Enrich.FromLogContext());
 ```
 
-- The bootstrap logger covers start-up, before the configuration is read ("Starting up"). `CreateBootstrapLogger()` lets the final logger replace it.
+- The bootstrap logger covers start-up, before the configuration is read ("Starting up"). `CreateBootstrapLogger()` 
+lets the final logger replace it.
 - `AddSerilog()` with no arguments never reads `appsettings.json`, so only the Console sink would exist.
 - Sinks are not set in code, so they can change in JSON without a rebuild.
 - The old `Logging` section is not read by Serilog.
 - `Logs/` is in `.gitignore`, because logs are runtime output and often contain request data.
 - Serilog replaces the default logging pipeline, so `ILogger<T>` works everywhere as before. Only the destination and formatting change.
-- `Program.cs` wraps start-up in try/catch/finally: `Log.Information("Starting up")`, `Log.Fatal` if start-up fails, and `Log.CloseAndFlush()` at the end.
+- `Program.cs` wraps start-up in try/catch/finally: `Log.Information("Starting up")`, `Log.Fatal` if start-up fails, 
+and `Log.CloseAndFlush()` at the end.
 - **Update (the JSON above is now outdated).** `MinimumLevel` became an object with `Default` and `Override`:
 
 ```json
@@ -198,9 +214,11 @@ builder.Services.AddSerilog((services, lc) => lc
 },
 ```
 
-- `Override` `"Microsoft.AspNetCore": "Warning"` matches by category prefix. The framework's "Request starting / Route matched / Executing endpoint" lines disappeared, while my own `HelpDesk.Api...` lines stayed at Information.
+- `Override` `"Microsoft.AspNetCore": "Warning"` matches by category prefix. The framework's 
+"Request starting / Route matched / Executing endpoint" lines disappeared, while my own `HelpDesk.Api...` lines stayed at Information.
 
-Result: the same lines appear in the console and in `Logs/log.txt`. The file has a full date and time offset on each line, and it starts at "Now listening", because the bootstrap logger writes to the console only.
+Result: the same lines appear in the console and in `Logs/log.txt`. The file has a full date and time offset on each line, 
+and it starts at "Now listening", because the bootstrap logger writes to the console only.
 
 [Serilog.AspNetCore](https://github.com/serilog/serilog-aspnetcore)  
 [Serilog.Settings.Configuration](https://github.com/serilog/serilog-settings-configuration)
@@ -219,7 +237,8 @@ My first version used string interpolation inside `LogInformation`:
 _logger.LogInformation($"{context.Request.Method} {context.Request.Path} ...");
 ```
 
-That produces one finished string, so the values are not separate properties. A message template has named placeholders, and the values are passed as arguments:
+That produces one finished string, so the values are not separate properties. A message template has named placeholders, 
+and the values are passed as arguments:
 
 ```csharp
 _logger.LogInformation("{Method} {Path} {ElapsedMs} ms",
@@ -239,11 +258,15 @@ In the filter: `"Action {Action} starting"` and `"Action {Action} finished"`, wi
 ```
 
 - Placeholders are matched by position, so the arguments must be in the same order as the placeholders. Names use PascalCase.
-- With a template, `Method` and `ElapsedMs` stay separate named properties, so they can be searched and filtered. A JSON formatter such as `RenderedCompactJsonFormatter` shows them (mentioned in the Serilog README).
+- With a template, `Method` and `ElapsedMs` stay separate named properties, so they can be searched and filtered.
+A JSON formatter such as `RenderedCompactJsonFormatter` shows them (mentioned in the Serilog README).
 - I left the time out of the filter message, because Serilog stamps every line already.
-- `ILogger<T>` is registered as Singleton ("Framework-provided services" in the DI docs). That is why it is safe in the middleware's constructor, which is built once at startup.
-- `ILogger<T>` goes in the **constructor** only. An interface method like `OnActionExecuted` has a fixed signature, so extra parameters give a compile error. Only the convention-based `InvokeAsync` of middleware can take extra services.
-- Rider showed CA1873 ("evaluation of this argument may be expensive"). It is a suggestion. The arguments are plain property reads, so I left it, as the docs allow.
+- `ILogger<T>` is registered as Singleton ("Framework-provided services" in the DI docs). That is why it is safe in the 
+middleware's constructor, which is built once at startup.
+- `ILogger<T>` goes in the **constructor** only. An interface method like `OnActionExecuted` has a fixed signature, 
+so extra parameters give a compile error. Only the convention-based `InvokeAsync` of middleware can take extra services.
+- Rider showed CA1873 ("evaluation of this argument may be expensive"). It is a suggestion. 
+The arguments are plain property reads, so I left it, as the docs allow.
 - `ILogger<T>`: T is used as the log category, so each line shows which class wrote it.
 
 ### Log levels
@@ -265,9 +288,11 @@ In the filter: `"Action {Action} starting"` and `"Action {Action} finished"`, wi
 
 ## Explain what `traceId` is and why it is important
 
-A `traceId` is a unique ID for one request. The client gets it in the Problem Details response, and the same value is written to the log. A client can quote it, and I can find the exact log entry with the exception and stack trace.
+A `traceId` is a unique ID for one request. The client gets it in the Problem Details response, and the same value is 
+written to the log. A client can quote it, and I can find the exact log entry with the exception and stack trace.
 
-**Logging the exception (task 3.2).** `GlobalExceptionHandler` now takes `ILogger<GlobalExceptionHandler>` in its constructor and logs before it writes the response:
+**Logging the exception (task 3.2).** `GlobalExceptionHandler` now takes `ILogger<GlobalExceptionHandler>` 
+in its constructor and logs before it writes the response:
 
 ```csharp
 _logger.LogError(exception, "Error has occurred. Refer to this trace ID: {TraceId}",
@@ -284,7 +309,8 @@ _logger.LogError(exception, "Error has occurred. Refer to this trace ID: {TraceI
 | Log | `0HNQ021SEVDIO:00000003` | `httpContext.TraceIdentifier`, the server's own request ID |
 | Response | `00-6109740f51eaf490dac16d77680d6035-17c6e8b3589f22c6-00` | `Activity.Current.Id`, the W3C trace ID |
 
-The framework sets the response value with `Activity.Current?.Id ?? httpContext?.TraceIdentifier`, so the log must use the same expression. The W3C format is version, trace ID, parent ID and flags, and it is made to follow a request across several systems.
+The framework sets the response value with `Activity.Current?.Id ?? httpContext?.TraceIdentifier`, 
+so the log must use the same expression. The W3C format is version, trace ID, parent ID and flags, and it is made to follow a request across several systems.
 
 **Result.** Log and response now match:
 
@@ -317,6 +343,36 @@ The framework sets the response value with `Activity.Current?.Id ?? httpContext?
 
 ## Add Validation with Data Annotations to a DTO
 
+`Create` used to take `TicketRecord` straight from the client. It now takes `CreateTicketRequestDto` 
+(in `HelpDesk.Api/DTOs`) and maps it to a `TicketRecord` inside the action. The DTO separates what the client may send 
+from the Core model, and the validation rules live in the Api project.
+
+- The DTO must be `public`, because a public controller action cannot take an internal type as a parameter.
+- `[Required]` does nothing on `int` and `DateTime`. A non-nullable value type always has a value, so a missing `Id` 
+  becomes `0` and passes. `[Range(1, int.MaxValue)]` catches it instead.
+- `[Required]` on a `string` works: a missing or empty value fails.
+- `[ApiController]` checks the annotations before the action runs and returns the 400 itself. `Create` is never called.
+
+POST without a description:
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "One or more validation errors occurred.",
+  "status": 400,
+  "errors": {
+    "Description": [
+      "The Description field is required."
+    ]
+  },
+  "traceId": "00-ba78ab0326bef8d939a5df795e038aaf-998e7e065afcc22f-00"
+}
+```
+
+[Model validation in ASP.NET Core MVC](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/validation?view=aspnetcore-10.0)
+
+[🏠 To top](#overview)
+
 ---
 
 ## Implement FluentValidation in separate class
@@ -324,6 +380,16 @@ The framework sets the response value with `Activity.Current?.Id ?? httpContext?
 ---
 
 ## Justify when to use Data Annotations vs FluentValidation
+
+| Use | When |
+|---|---|
+| Data Annotations | Simple, fixed rules on one property (required, length, range). They run automatically and need no extra code. |
+| FluentValidation | The rule needs a value from settings or a service, compares several properties, or is conditional. The rules live in their own class, which can be tested on its own. |
+
+In this project: `[Required]` and `[Range]` are Data Annotations. The description length is FluentValidation, 
+because the limit comes from `TicketSettings`.
+
+[🏠 To top](#overview)
 
 ---
 
@@ -333,11 +399,14 @@ The framework sets the response value with `Activity.Current?.Id ?? httpContext?
 
 ## Identify at least two types of data leaks in logs
 
-Two types of data that must never end up in logs: **secrets** (API keys) and **personal data** (emails, and free-text fields such as `User` and `Description`).
+Two types of data that must never end up in logs: **secrets** (API keys) and **personal data** 
+(emails, and free-text fields such as `User` and `Description`).
 
-- The API key is not in the log. My log lines only contain method, path, elapsed time, operation IDs and action name, and nothing logs headers or request bodies.
+- The API key is not in the log. My log lines only contain method, path, elapsed time, operation IDs and action name, 
+and nothing logs headers or request bodies.
 - Never log: API keys and other secrets, emails, and personal data in free-text fields (`User`, `Description`).
-- For a ticket, log the ticket ID, not the description. The ID is enough to find the ticket, and free text can contain anything the user types.
+- For a ticket, log the ticket ID, not the description. The ID is enough to find the ticket, and free text can contain 
+anything the user types.
 
 [🏠 To top](#overview)
 
