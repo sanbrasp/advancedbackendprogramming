@@ -14,6 +14,6 @@ public class CreateTicketRequestDto
     
     public DateTime DateOfDeadline { get; set; } = DateTime.UtcNow.AddDays(14);
     
-    [Required, StringLength(500)]
+    [Required]
     public string Description { get; set; } =  string.Empty;
 }
