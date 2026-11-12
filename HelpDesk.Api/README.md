@@ -1,6 +1,6 @@
 # Helpdesk API
 
-Weeks 45 and 46 - 2026
+Weeks 45, 46 - 2026
 
 A practice project focused on middleware, DI, options, layers, error handling, logging and validation.
 
@@ -37,7 +37,7 @@ HelpDesk.Api/                                       HTTP layer
 ├── DTOs/
 │   └── CreateTicketRequestDto.cs                   Request body for POST, validated with Data Annotations
 ├── ExceptionHandlers/
-│   └── GlobalExceptionHandler.cs                   Returns 500 Problem Details and logs the exception
+│   └── GlobalExceptionHandler.cs                   Returns Details (400, 500) and logs the exception
 ├── Filters/
 │   ├── AuditActionFilter.cs                        An audit filter implementing IActionFilter interface
 │   └── ValidateIdFilter.cs                         Returns 400 when id is 0 or lower (GetById only)
@@ -121,7 +121,8 @@ Base route: `api/tickets`
 - `ErrorController` and `/error` are replaced by `GlobalExceptionHandler` (week 46)
 - The 500 response has a `traceId`. The same value is logged with the exception, so the log entry can be found
 - Validation errors return `400` Problem Details with an `errors` field that names each invalid field
-- Logs go to the console and to `Logs/log.txt` through Serilog. The log folder is not in Git
+- Logs go to the console and to a daily file in `Logs/` through Serilog. The log folder is not in Git
+- `ArgumentNullException` is returned as `400`. Every other unhandled exception is returned as `500`
 
 ---
 
@@ -156,7 +157,7 @@ flowchart LR
   O --> A[appsettings.json, Tickets section]
   K --> SO[IOptions of SecuritySettings]
   SO --> U[User secrets, Security:ApiKey]
-  Tests[HelpDesk.Tests] --> Api
+  E -- "400 or 500 Problem Details with traceId" --> C
 ```
 
 - The controller depends on `ITicketService` interface, not on the concrete class.
@@ -194,6 +195,7 @@ flowchart LR
   Api[HelpDesk.Api] --> Core[HelpDesk.Core]
   Api --> Infra[HelpDesk.Infrastructure]
   Infra --> Core
+  Tests[HelpDesk.Tests] --> Api
 ```
 
 - Core depends on nothing, so it can be changed and tested without HTTP or a database.

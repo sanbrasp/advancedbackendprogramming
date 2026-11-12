@@ -6,7 +6,7 @@ Projects, notes, code and resources for the Advanced Backend Programming course 
 
 ## Project Structure
 
-The solution has three projects. Arrows in the diagram mean "references".
+The solution has four projects. Arrows in the diagram mean "references".
 
 ```text
 HelpDesk.Core/                      What a ticket is and what the app does with it
@@ -23,13 +23,21 @@ HelpDesk.Infrastructure/            Technical details Core needs but does not ca
     └── InMemoryTicketRepository.cs In-memory store, implements ITicketRepository
 
 HelpDesk.Api/                       HTTP entry point and wiring
-├── Controllers/                    Tickets, Diagnostics (lifetime demo), Error
+├── Controllers/                    Tickets, Diagnostics (lifetime demo)
+├── DTOs/                           CreateTicketRequestDto
+├── ExceptionHandlers/              GlobalExceptionHandler
 ├── Filters/                        AuditActionFilter, ValidateIdFilter
 ├── Interfaces/                     IOperation* (lifetime demo)
 ├── Middleware/                     ApiKeyMiddleware, RequestTimingMiddleware (+ extension)
 ├── Models/                         Operation (lifetime demo)
 ├── Settings/                       SecuritySettings, TicketSettings
-└── Program.cs                      Service registration and middleware pipeline
+├── Validators/                     CreateTicketRequestDtoValidator
+└── Program.cs                      Service registration, Serilog setup and middleware pipeline
+
+HelpDesk.Tests/                     xUnit integration tests for the API
+├── Models/                         ThrowingTicketRepository (stub)
+├── HelpDeskApiFactory.cs           Starts the API in memory with a test API key
+└── TicketsApiTests.cs              Three integration tests
 ```
 
 ---
@@ -56,17 +64,18 @@ dotnet build
 dotnet run --project WebApiBasics
 ```
 
-**Week 45 Project**  
+**Week 45 and 46 Project**  
 
 The API key is not in the repository. Set it in user secrets first (use any made-up value):
 
 ```text
-dotnet user-secrets set "Security:ApiKey" "<your-demo-key>"
+dotnet user-secrets set "Security:ApiKey" "<your-demo-key>" --project HelpDesk.Api
 ```
 
 ```bash
 dotnet build
 dotnet run --project Helpdesk.Api
+dotnet test
 ```
 
 ---
@@ -76,5 +85,7 @@ dotnet run --project Helpdesk.Api
   - [WebApiBasics README](WebApiBasics/README.md)
 - [Week 45 Notes](Docs/Week45_InfrastructureArchitecture.md)
   - [HelpDesk.API README](HelpDesk.Api/README.md)
+- [Week 46 Notes](Docs/Week46_RobustApis.md)
+  - [Helpdesk.Api README](HelpDesk.Api/README.md)
 
 ---

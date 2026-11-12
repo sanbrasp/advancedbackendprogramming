@@ -124,8 +124,14 @@ public class GlobalExceptionHandler : IExceptionHandler
 }
 ```
 
+**Second version.** The handler gets `IProblemDetailsService` by constructor injection, sets the status code and
+writes through `TryWriteAsync`. The framework then builds the response the standard way.
+
 **Update 11 Nov:** the handler now also takes `ILogger<GlobalExceptionHandler>` and logs the exception with the 
 trace ID. See the traceId section.
+
+**Update 12 Nov (core task 2):** the handler now maps `ArgumentNullException` to `400` with the title
+"A required value was missing". Every other exception is still `500`.
 
 Response:
 
@@ -217,6 +223,12 @@ and `Log.CloseAndFlush()` at the end.
 - `Override` `"Microsoft.AspNetCore": "Warning"` matches by category prefix. The framework's
   "Request starting / Route matched / Executing endpoint" lines disappeared, while my own `HelpDesk.Api...` lines
   stayed at Information.
+- **Update 12 Nov (core task 3):**
+  - `appsettings.Development.json` sets `MinimumLevel:Default` to `Debug`, so Development logs more than the
+    `Information` level in `appsettings.json`.
+  - The File sink has `"rollingInterval": "Day"`, so there is one file per day with the date in the name, for
+    example `Logs/log20261112.txt`. Where these notes say `Logs/log.txt`, that now means the file for that day.
+  - The `WithMachineName` enricher is added, so every log event carries the machine name as a property.
 
 Result: the same lines appear in the console and in `Logs/log.txt`. The file has a full date and time offset on each line, 
 and it starts at "Now listening", because the bootstrap logger writes to the console only.
@@ -537,9 +549,9 @@ public class HelpDeskApiFactory : WebApplicationFactory<Program>
 
 | Test | Request | Checks |
 |---|---|---|
-| `GetAll_WithApiKey_ReturnsOk` | GET `/api/tickets` | 200 |
-| `Create_WithoutDescription_ReturnsBadRequestWithErrors` | POST without a description | 400, and the body has an `errors` field |
-| `GetAll_WhenRepositoryThrows_ReturnsProblemDetailsWithoutDetails` | GET `/api/tickets` with a throwing repository | 500, `application/problem+json`, a `traceId`, no exception message, no stack trace |
+| `GetAll_When_ApiKeyIsValid_Should_ReturnOk` | GET `/api/tickets` | 200 |
+| `Create_When_DescriptionIsMissing_Should_ReturnBadRequestWithErrors` | POST without a description | 400, the body has an `errors` field, and it names `Description` |
+| `GetAll_When_RepositoryThrows_Should_ReturnProblemDetailsWithoutDetails` | GET `/api/tickets` with a throwing repository | 500, `application/problem+json`, a `traceId`, no exception message, no stack trace |
 
 **Forcing a 500.** `ThrowingTicketRepository` (in `HelpDesk.Tests/Models`) implements `ITicketRepository`, and every
 method throws `new Exception("Secret database details")`. The third test swaps it in for that test only:
