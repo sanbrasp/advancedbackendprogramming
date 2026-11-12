@@ -579,6 +579,75 @@ var client = _factory.WithWebHostBuilder(builder =>
 
 ## Complete at least three of the core tasks
 
+The six core tasks are written for a new order API. I did them inside Help Desk instead, so some details differ.
+Tasks 1 and 5 were answered with help from Claude.
+
+| # | Task | Status | Where, and what differs |
+|---|---|---|---|
+| 1 | Classify error types | Done | Table below |
+| 2 | Global exception handler | Done, with a deviation | The GlobalExceptionHandler and traceId sections. My handler maps every exception to 500. The task also maps `ArgumentNullException` to 400. I use controllers, not Minimal API |
+| 3 | Configure Serilog | Done, with deviations | The Serilog and structured logging sections. Not done: Debug level in Development, daily rolling file, `WithMachineName` |
+| 4 | Validation with both techniques | Done | The Data Annotations, FluentValidation and Justify sections. My DTO combines the two techniques |
+| 5 | Logs that do not leak data | Done | Below |
+| 6 | Test all three scenarios | Done | The Tests section. The tests are named `Method_When_Condition_Should_Expected` |
+
+### Task 1: classify error types
+
+| # | Situation | Type | Status | Reason |
+|---|---|---|---|---|
+| A | The client sends `amount: -10` | Validation error | 400 | The input breaks a rule for the field, and the client can fix it. |
+| B | Order 99 does not exist in the database | Domain error | 404 | The request is valid, but the resource does not exist. An expected situation. |
+| C | The database connection drops in the middle of a call | Unexpected exception | 500 | A failure on the server that the client cannot fix. The details go to the log only. |
+| D | The JSON is missing a `[Required]` field | Validation error | 400 | Required input is missing, and the client can fix it. |
+| E | The user tries to delete another user's order | Domain error | 403 | The input is valid and the order exists, but this user is not allowed to do it. |
+
+### Task 5: logs that do not leak data
+
+The code from the task:
+
+```csharp
+_logger.LogInformation($"Ny bruker registrert: {user.Email}, passord: {user.Password}");
+_logger.LogDebug("Hele request-objektet: {@request}");
+_logger.LogError(ex, $"Databasefeil: {connectionString}");
+```
+
+| Line | Leak | Risk |
+|---|---|---|
+| 1 | The password in clear text, and the email | Anyone who can read the log can log in as the user. The email is personal data. |
+| 2 | The whole request object (`{@request}` writes out every property) | Every field ends up in the log, including passwords, tokens and personal data. |
+| 3 | The connection string | It holds the server, user name and password, which gives direct access to the database. |
+
+Lines 1 and 3 also use string interpolation, so the log loses its structure.
+
+Improved version (assuming the user has an `Id`):
+
+```csharp
+// An ID instead of the email, and no password. Information: a normal business event.
+_logger.LogInformation("New user registered: {UserId}", user.Id);
+
+// One chosen, harmless value instead of the whole object. Debug: detail for developers only.
+_logger.LogDebug("Registration request received for user {UserId}", user.Id);
+
+// The exception first, so the stack trace is logged. No connection string. Error: the operation failed.
+_logger.LogError(ex, "Database error while registering user {UserId}", user.Id);
+```
+
+**Why passwords and connection strings must not be logged:**
+
+- **Technical:**  
+  logs are plain text. They are kept for a long time, copied to other systems, and read by many more
+  people than the database is. A password or connection string in a log is a working credential for anyone with log
+  access.
+- **Legal:**  
+  GDPR Article 5(1)(c) requires personal data to be "limited to what is necessary" (data minimisation).
+  Article 5(1)(f) requires "appropriate security of the personal data", and Article 32 requires "appropriate
+  technical and organisational measures". Logging emails and passwords breaks all three.
+
+[Art. 5 GDPR](https://gdpr-info.eu/art-5-gdpr/)  
+[Art. 32 GDPR](https://gdpr-info.eu/art-32-gdpr/)
+
+[🏠 To top](#overview)
+
 ---
 
 ## Identify at least two types of data leaks in logs
