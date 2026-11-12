@@ -20,7 +20,7 @@ public class TicketsApiTests : IClassFixture<HelpDeskApiFactory>
     }
 
     [Fact]
-    public async Task GetAll_WithApiKey_ReturnsOk()
+    public async Task GetAll_WithValidApiKey_ReturnsOk()
     {
         // Arrange
         // Nothing to arrange
@@ -33,7 +33,7 @@ public class TicketsApiTests : IClassFixture<HelpDeskApiFactory>
     }
 
     [Fact]
-    public async Task Create_WithoutDescription_ReturnsBadRequestWithErrors()
+    public async Task Create_WithMissingDescription_ReturnsBadRequestWithErrors()
     {
         // Arrange
         var body = new { id = 60, user = "test user" };
@@ -44,10 +44,13 @@ public class TicketsApiTests : IClassFixture<HelpDeskApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("\"errors\"", await response.Content.ReadAsStringAsync());
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"errors\"", content);
+        Assert.Contains("\"Description\"", content);
     }
 
     [Fact]
-    public async Task GetAll_WhenRepositoryThrows_ReturnsProblemDetailsWithoutDetails()
+    public async Task GetAll_WhenRepositoryThrows_ReturnsProblemDetails_WithoutDetails()
     {
         // Arrange
         var client = _factory.WithWebHostBuilder(builder =>
