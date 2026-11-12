@@ -98,6 +98,19 @@ X-Api-Key: {{apiKey}}
   "description": "Monitor flickers and my emails are full of spam, also my mouse is slow and i can't see my second monitor, and i told you about this already because this is your fault and why am i seeing ads for shaving cream I thought i told you not to include me in such ads I want no ads well maybe for barbeque sauce but I guess you can't fix that, can you? Anyway how is margareth? fishing this weekend? Am i over 500 characters yet? I am not counting. I don't like counting. I always lose track. But fix my pc and the internet and the ads please, that is your job."
 }
 
+### POST with deadline is before date of issue
+POST {{host}}/api/Tickets
+Content-Type: application/json
+X-Api-Key: {{apiKey}}
+
+{
+  "id": 50,
+  "user": "Test User",
+  "dateOfIssue": "2026-11-12T10:00:00Z",
+  "dateOfDeadline": "2026-11-10T10:00:00Z",
+  "description": "Deadline is two days before the issue date."
+}
+
 ### GET Diagnostics (operation ID)
 GET {{host}}/api/Diagnostics
 Accept: application/json
