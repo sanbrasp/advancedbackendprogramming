@@ -10,5 +10,6 @@ internal class CreateTicketRequestDtoValidator : AbstractValidator<CreateTicketR
     public CreateTicketRequestDtoValidator(IOptions<TicketSettings> settings)
     {
         RuleFor(request => request.Description).MaximumLength(settings.Value.MaxDescriptionLength);
+        RuleFor(request => request.DateOfDeadline).GreaterThan(request => request.DateOfIssue);
     }
 }
