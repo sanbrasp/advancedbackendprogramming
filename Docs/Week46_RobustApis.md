@@ -25,7 +25,7 @@ Week 46 notes
 ## Week 46
 
 Learning goals for this week:
-- [ ] I can explain the difference between validation errors and unexpected exceptions in my own words
+- [x] I can explain the difference between validation errors and unexpected exceptions in my own words
 - [x] I can implement GlobalExceptionHandler with Problem Details and traceId
 - [x] I can configure Serilog from appsettings.json with Console and File sinks
 - [x] I can use structured logging (message templates) instead of string interpolation
@@ -33,16 +33,16 @@ Learning goals for this week:
 - [x] I can add validation with Data Annotations to a DTO
 - [x] I can implement a FluentValidation validator in a separate class
 - [x] I can justify when I would use Data Annotations vs. FluentValidation
-- [ ] I have completed at least three of the six core tasks
+- [x] I have completed at least three of the six core tasks
 - [x] I can identify at least two types of data leaks that must not occur in logs
 
 ---
 
 ## Difference Between Validation Errors and Unexpected Exceptions
 
-A **validation error** is the client's mistake: wrong or missing input. It is expected and predictable, so it gets a 
-`4xx` status. It is not an exception. The action returns the result itself, and the exception handler is never involved. 
-The client is told what to fix.
+A **validation error** is the client's mistake: wrong or missing input. It is expected and predictable, so it gets a
+`4xx` status. It is not an exception, and the exception handler is never involved. The response comes from
+`[ApiController]` (Data Annotations) or from the action itself (FluentValidation). The client is told what to fix.
 
 An **unexpected exception** is our mistake: a bug or a failure nobody planned for. It is thrown, and `GlobalExceptionHandler` 
 catches it. The client gets a generic `500` with a `traceId`, and never the details. The details go to the log.
@@ -53,6 +53,7 @@ catches it. The client gets a generic `500` with a `traceId`, and never the deta
 | Not found | GET `/api/tickets/99` | 404 | No | The action's result |
 | Conflict | POST with an id that exists | 409 | No | The action's result |
 | Unexpected exception | `/api/Diagnostics/throw` | 500 | Yes | The exception handler |
+| Validation error | POST without a description | 400 | No | `[ApiController]`, before the action runs |
 
 The two are treated differently because the client needs different things. After a validation error, it needs to know 
 *what to change*. After an unexpected exception, there is nothing it can fix, and internal details could help an attacker.
@@ -93,11 +94,9 @@ was poorer than the baseline:
 | Hand-written with `WriteAsJsonAsync` | `application/json` | no | no |
 | `IProblemDetailsService.TryWriteAsync` | `application/problem+json` | yes | yes |
 
-**Final version.** The handler gets `IProblemDetailsService` by constructor injection, sets the status code and writes
-through `TryWriteAsync`. The framework then builds the response the standard way.
 
 ```csharp
-internal class GlobalExceptionHandler : IExceptionHandler
+public class GlobalExceptionHandler : IExceptionHandler
 {
     private readonly IProblemDetailsService _problemDetailsService;
 
@@ -143,11 +142,10 @@ Returning `true` without writing anything gives a 404.
 - I left `Detail` out on purpose. `exception.Message` can reveal internals to the client.
 - The handler is registered in DI, so it can take services in its constructor. An endpoint like `ErrorController` 
 could do that too, but a handler class is easier to swap in tests.
-- `RequestTimingMiddleware` printed nothing for the failing request. The exception skips the code after `await _next(context)`, 
-and the exception handler sits outside the timing middleware. 
-  This is a blind spot, which task 2.4 fixes. **Correction:** task 2.4 does not fix this. The planned fix is task 3.2: 
-the handler logs the exception itself.  
-  **Update 11 Nov:** done in task 3.2, see the traceId section.
+- `RequestTimingMiddleware` printed nothing for the failing request. The exception skips the code after
+  `await _next(context)`, and the exception handler sits outside the timing middleware. This is a blind spot.
+  I first wrote that task 2.4 would fix it, which was wrong. **Update 11 Nov:** task 3.2 covers it instead. The
+  handler logs the exception itself, so the failure leaves an `ERR` entry. See the traceId section.
 - RFC 7807 from the lecture has been replaced by RFC 9457. The members are the same.
 
 [Handle errors in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling?view=aspnetcore-10.0)  
@@ -195,7 +193,8 @@ lets the final logger replace it.
 - Sinks are not set in code, so they can change in JSON without a rebuild.
 - The old `Logging` section is not read by Serilog.
 - `Logs/` is in `.gitignore`, because logs are runtime output and often contain request data.
-- Serilog replaces the default logging pipeline, so `ILogger<T>` works everywhere as before. Only the destination and formatting change.
+- Serilog replaces the default logging pipeline, so `ILogger<T>` works everywhere as before. Only the destination
+  and formatting change.
 - `Program.cs` wraps start-up in try/catch/finally: `Log.Information("Starting up")`, `Log.Fatal` if start-up fails, 
 and `Log.CloseAndFlush()` at the end.
 - **Update (the JSON above is now outdated).** `MinimumLevel` became an object with `Default` and `Override`:
@@ -214,8 +213,9 @@ and `Log.CloseAndFlush()` at the end.
 },
 ```
 
-- `Override` `"Microsoft.AspNetCore": "Warning"` matches by category prefix. The framework's 
-"Request starting / Route matched / Executing endpoint" lines disappeared, while my own `HelpDesk.Api...` lines stayed at Information.
+- `Override` `"Microsoft.AspNetCore": "Warning"` matches by category prefix. The framework's
+  "Request starting / Route matched / Executing endpoint" lines disappeared, while my own `HelpDesk.Api...` lines
+  stayed at Information.
 
 Result: the same lines appear in the console and in `Logs/log.txt`. The file has a full date and time offset on each line, 
 and it starts at "Now listening", because the bootstrap logger writes to the console only.
@@ -229,7 +229,8 @@ and it starts at "Now listening", because the bootstrap logger writes to the con
 
 ## Use Structured Logging
 
-Replaced the `Console.WriteLine` calls in `RequestTimingMiddleware` and `AuditActionFilter` with `ILogger<T>` and message templates.
+Replaced the `Console.WriteLine` calls in `RequestTimingMiddleware` and `AuditActionFilter` with `ILogger<T>` and
+message templates.
 
 My first version used string interpolation inside `LogInformation`:
 
@@ -248,7 +249,8 @@ _logger.LogInformation("Operation IDs: Singleton {Singleton}, Scoped {Scoped}, T
     _singletonOperation.OperationId, scopedOperation.OperationId, transientOperation.OperationId);
 ```
 
-In the filter: `"Action {Action} starting"` and `"Action {Action} finished"`, with `context.ActionDescriptor.DisplayName`.
+In the filter: `"Action {Action} starting"` and `"Action {Action} finished"`, with
+`context.ActionDescriptor.DisplayName`.
 
 ```terminaloutput
 [19:00:57 INF] Action HelpDesk.Api.Controllers.TicketsController.GetAll (HelpDesk.Api) starting
@@ -257,7 +259,8 @@ In the filter: `"Action {Action} starting"` and `"Action {Action} finished"`, wi
 [19:00:57 INF] Operation IDs: Singleton 5960, Scoped 1470, Transient 8565
 ```
 
-- Placeholders are matched by position, so the arguments must be in the same order as the placeholders. Names use PascalCase.
+- Placeholders are matched by position, so the arguments must be in the same order as the placeholders. Names use
+  PascalCase.
 - With a template, `Method` and `ElapsedMs` stay separate named properties, so they can be searched and filtered.
 A JSON formatter such as `RenderedCompactJsonFormatter` shows them (mentioned in the Serilog README).
 - I left the time out of the filter message, because Serilog stamps every line already.
@@ -309,8 +312,9 @@ _logger.LogError(exception, "Error has occurred. Refer to this trace ID: {TraceI
 | Log | `0HNQ021SEVDIO:00000003` | `httpContext.TraceIdentifier`, the server's own request ID |
 | Response | `00-6109740f51eaf490dac16d77680d6035-17c6e8b3589f22c6-00` | `Activity.Current.Id`, the W3C trace ID |
 
-The framework sets the response value with `Activity.Current?.Id ?? httpContext?.TraceIdentifier`, 
-so the log must use the same expression. The W3C format is version, trace ID, parent ID and flags, and it is made to follow a request across several systems.
+The framework sets the response value with `Activity.Current?.Id ?? httpContext?.TraceIdentifier`, so the log must
+use the same expression. The W3C format is version, trace ID, parent ID and flags, and it is made to follow a request
+across several systems.
 
 **Result.** Log and response now match:
 
@@ -327,12 +331,13 @@ so the log must use the same expression. The W3C format is version, trace ID, pa
 }
 ```
 
-- **Why not timestamps:** many requests can share the same timestamp, but each has one unique trace ID.
+- **Why search by ID and not timestamps:** many requests can share the same timestamp, but each has one unique trace ID.
 - **The client does not see the stack trace.** The response body has only four fields. The stack trace goes to 
   the console and `Logs/log.txt` only.
 - **Reading the stack trace:** the first `at` line is where the exception was thrown (`DiagnosticsController.cs:line 35`). 
   Lines with a file path are my code, the rest is framework code.
-- `RequestTimingMiddleware` still prints no timing line for the failing request, but the failure now leaves an `ERR` entry.
+- `RequestTimingMiddleware` still prints no timing line for the failing request, but the failure now leaves an
+  `ERR` entry.
 
 [DefaultProblemDetailsFactory.cs (ASP.NET Core source)](https://source.dot.net/Microsoft.AspNetCore.Mvc.Core/Infrastructure/DefaultProblemDetailsFactory.cs.html)  
 [W3C Trace Context](https://www.w3.org/TR/trace-context/)
@@ -351,9 +356,12 @@ from the Core model, and the validation rules live in the Api project.
 - `[Required]` does nothing on `int` and `DateTime`. A non-nullable value type always has a value, so a missing `Id` 
   becomes `0` and passes. `[Range(1, int.MaxValue)]` catches it instead.
 - `[Required]` on a `string` works: a missing or empty value fails.
-- `[ApiController]` checks the annotations before the action runs and returns the 400 itself. `Create` is never called.
+- `[ApiController]` checks the annotations before the action runs. If one fails, it returns the 400 itself, and
+  `Create` is never called.
 
-POST without a description:
+**Test request:**  
+`POST /api/tickets` with a JSON body where the `description` field is left out. `[Required]` on
+`Description` fails, and this is the response:
 
 ```json
 {
@@ -377,6 +385,67 @@ POST without a description:
 
 ## Implement FluentValidation in separate class
 
+Data Annotations need compile-time constants, so `[StringLength(500)]` cannot read `MaxDescriptionLength` from the
+settings. A FluentValidation validator can, because it gets `IOptions<TicketSettings>` by constructor injection.
+
+Packages: `FluentValidation` and `FluentValidation.DependencyInjectionExtensions`.
+
+```csharp
+internal class CreateTicketRequestDtoValidator : AbstractValidator<CreateTicketRequestDto>
+{
+    public CreateTicketRequestDtoValidator(IOptions<TicketSettings> settings)
+    {
+        RuleFor(request => request.Description).MaximumLength(settings.Value.MaxDescriptionLength);
+    }
+}
+```
+
+Registration in `Program.cs` (service type first, implementation second):
+
+```csharp
+builder.Services.AddScoped<IValidator<CreateTicketRequestDto>, CreateTicketRequestDtoValidator>();
+```
+
+In `Create`, the controller calls the validator manually and copies the errors into `ModelState`:
+
+```csharp
+var validationResult = _validator.Validate(ticketRequestDto);
+if (!validationResult.IsValid)
+{
+    foreach (var error in validationResult.Errors)
+    {
+        ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+    }
+
+    return ValidationProblem(ModelState);
+}
+```
+
+- This replaced the manual length check in `Create`.
+- `StringLength(500)` was removed from the DTO, so the limit lives in one place, the settings.
+- `ValidationProblem(ModelState)` gives the same 400 shape as Data Annotations, so the client sees one format.
+
+**Test request:** `POST /api/tickets` with a 553-character description. The limit in the settings is 500, so the
+validator fails, and this is the response:
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "One or more validation errors occurred.",
+  "status": 400,
+  "errors": {
+    "Description": [
+      "The length of 'Description' must be 500 characters or fewer. You entered 553 characters."
+    ]
+  },
+  "traceId": "00-7b3066e8bfe18127e90892e023c334da-66b18c7c4c44c6e5-00"
+}
+```
+
+[FluentValidation: ASP.NET Core](https://docs.fluentvalidation.net/en/latest/aspnet.html)
+
+[🏠 To top](#overview)
+
 ---
 
 ## Justify when to use Data Annotations vs FluentValidation
@@ -388,6 +457,18 @@ POST without a description:
 
 In this project: `[Required]` and `[Range]` are Data Annotations. The description length is FluentValidation, 
 because the limit comes from `TicketSettings`.
+
+**Reasoning:**
+
+- **Data Annotations first.** The rule sits on the property it belongs to, and `[ApiController]` runs it
+  automatically, so it is the least code. The limit is that an attribute only takes compile-time constants, and the
+  built-in attributes look at one property at a time.
+- **FluentValidation when an attribute cannot express the rule.** The validator is a normal class created by DI, so
+  it can take `IOptions<TicketSettings>` or other services. The rules are code, so they can compare properties or
+  depend on a condition. The cost is an extra package, an extra class, a registration, and a manual call in the
+  action.
+- **One place per rule.** The description length is checked only in the validator, not also by an attribute or by
+  hand in the controller.
 
 [🏠 To top](#overview)
 
@@ -404,7 +485,7 @@ Two types of data that must never end up in logs: **secrets** (API keys) and **p
 
 - The API key is not in the log. My log lines only contain method, path, elapsed time, operation IDs and action name, 
 and nothing logs headers or request bodies.
-- Never log: API keys and other secrets, emails, and personal data in free-text fields (`User`, `Description`).
+- API keys and other secrets, emails, and personal data in free-text fields (`User`, `Description`).
 - For a ticket, log the ticket ID, not the description. The ID is enough to find the ticket, and free text can contain 
 anything the user types.
 
