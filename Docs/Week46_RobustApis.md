@@ -17,6 +17,7 @@ Week 46 notes
     - [Data Annotations on a DTO](#add-validation-with-data-annotations-to-a-dto)
     - [FluentValidation in a separate class](#implement-fluentvalidation-in-separate-class)
     - [Data Annotations vs FluentValidation](#justify-when-to-use-data-annotations-vs-fluentvalidation)
+    - [Tests](#tests)
     - [Core tasks](#complete-at-least-three-of-the-core-tasks)
     - [Data leaks in logs](#identify-at-least-two-types-of-data-leaks-in-logs)
 
@@ -496,6 +497,81 @@ because the limit comes from `TicketSettings`.
   action.
 - **One place per rule.** The description length is checked only in the validator, not also by an attribute or by
   hand in the controller.
+
+[🏠 To top](#overview)
+
+---
+
+## Tests
+
+`HelpDesk.Tests` is an xUnit project that references `HelpDesk.Api` and uses the package
+`Microsoft.AspNetCore.Mvc.Testing`. The package's major version must match the target framework: version 11.0.0
+failed to install on `net10.0`, and a 10.x version worked.
+
+**Starting the app from a test.**  
+`HelpDeskApiFactory` inherits `WebApplicationFactory<Program>` and starts the API in
+memory. The real API key is in user secrets, and a test must not depend on that, so the factory supplies its own key:
+
+```csharp
+public class HelpDeskApiFactory : WebApplicationFactory<Program>
+{
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.ConfigureAppConfiguration((context, config) =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Security:ApiKey"] = "test-key"
+            });
+        });
+    }
+}
+```
+
+- The tests send `X-Api-Key: test-key` and get through, so the in-memory value is the one in use.
+- `context` is not used. The lambda must take two parameters, and an unused one can be written as `_`.
+- `TicketsApiTests` implements `IClassFixture<HelpDeskApiFactory>`, so xUnit creates one factory and shares it between
+  the tests. The test class and its constructor must be `public`, because xUnit creates the class itself.
+
+**The three tests:**
+
+| Test | Request | Checks |
+|---|---|---|
+| `GetAll_WithApiKey_ReturnsOk` | GET `/api/tickets` | 200 |
+| `Create_WithoutDescription_ReturnsBadRequestWithErrors` | POST without a description | 400, and the body has an `errors` field |
+| `GetAll_WhenRepositoryThrows_ReturnsProblemDetailsWithoutDetails` | GET `/api/tickets` with a throwing repository | 500, `application/problem+json`, a `traceId`, no exception message, no stack trace |
+
+**Forcing a 500.** `ThrowingTicketRepository` (in `HelpDesk.Tests/Models`) implements `ITicketRepository`, and every
+method throws `new Exception("Secret database details")`. The third test swaps it in for that test only:
+
+```csharp
+var client = _factory.WithWebHostBuilder(builder =>
+{
+    builder.ConfigureTestServices(services =>
+    {
+        services.AddSingleton<ITicketRepository, ThrowingTicketRepository>();
+    });
+}).CreateClient();
+```
+
+- This works because `TicketService` depends on the `ITicketRepository` interface, not on the concrete class.
+- The class is a **stub**: a controllable replacement for a dependency. A **mock** is a stand-in the test asserts
+  against, usually built with a library like Moq. My asserts check the HTTP response, so a hand-written stub is enough.
+- The test asserts that the body does not contain `Secret database details` or `ThrowingTicketRepository`. That
+  proves the exception message and the stack trace stay on the server.
+
+**Mistakes I made on the way:**
+
+- The first test got a 404, because I requested `/api/HelpDesk/Tickets`. The route is `/api/tickets`.
+- `Assert.Contains` takes the text to look for first, and the text to search in second. I had them swapped.
+- Searching for `errors` without quotes would also match the title "One or more validation errors occurred.", so the
+  test looks for `"\"errors\""`, the JSON field name.
+
+**Result:** all three tests pass (12 Nov).
+
+[Integration tests in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-10.0)  
+[Best practices for writing unit tests - .NET](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)  
+[Anonymous types - C#](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/anonymous-types)
 
 [🏠 To top](#overview)
 

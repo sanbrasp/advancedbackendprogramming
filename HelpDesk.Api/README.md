@@ -73,7 +73,11 @@ HelpDesk.Infrastructure/                            Storage layer
 └── Data/
     └── InMemoryTicketRepository.cs                 In-memory store, implements ITicketRepository
 
-HelpDesk.Tests/                                     xUnit test project, no test files yet
+HelpDesk.Tests/                                     xUnit integration tests
+├── Models/
+│   └── ThrowingTicketRepository.cs                 Stub repository where every method throws
+├── HelpDeskApiFactory.cs                           Starts the API in memory with a test API key
+└── TicketsApiTests.cs                              Three tests: 200, 400 with errors, 500 without details
 ```
 
 ---
@@ -213,7 +217,8 @@ flowchart LR
 [Serilog.Settings.Configuration](https://github.com/serilog/serilog-settings-configuration)  
 [Logging in .NET and ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-10.0)  
 [Model validation in ASP.NET Core MVC](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/validation?view=aspnetcore-10.0)  
-[FluentValidation: ASP.NET Core](https://docs.fluentvalidation.net/en/latest/aspnet.html)
+[FluentValidation: ASP.NET Core](https://docs.fluentvalidation.net/en/latest/aspnet.html)  
+[Integration tests in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-10.0)
 
 
 ---
