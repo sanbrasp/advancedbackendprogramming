@@ -396,6 +396,7 @@ internal class CreateTicketRequestDtoValidator : AbstractValidator<CreateTicketR
     public CreateTicketRequestDtoValidator(IOptions<TicketSettings> settings)
     {
         RuleFor(request => request.Description).MaximumLength(settings.Value.MaxDescriptionLength);
+        RuleFor(request => request.DateOfDeadline).GreaterThan(request => request.DateOfIssue);
     }
 }
 ```
@@ -442,7 +443,33 @@ validator fails, and this is the response:
 }
 ```
 
-[FluentValidation: ASP.NET Core](https://docs.fluentvalidation.net/en/latest/aspnet.html)
+**Rule across two properties (12 Nov).** The deadline must be later than the issue date. A built-in attribute looks
+at one property, so this rule is in the validator. The rule does not know about the 14-day default. That default
+lives in the DTO and only applies when the client leaves the date out. The rule compares whatever dates the DTO has.
+
+**Test request:**  
+`POST /api/tickets` with `dateOfIssue` `2026-11-12T10:00:00Z` and `dateOfDeadline`
+`2026-11-10T10:00:00Z`. The response:
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "One or more validation errors occurred.",
+  "status": 400,
+  "errors": {
+    "DateOfDeadline": [
+      "'Date Of Deadline' must be greater than '12/11/2026 10:00:00'."
+    ]
+  },
+  "traceId": "00-e06553d6c2b4ae4b76fec5ff47d8bf53-f5059dcb661008f3-00"
+}
+```
+
+- A POST with a JSON body needs the header `Content-Type: application/json`. Without it the API answers `415`
+  (Unsupported Media Type).
+
+[FluentValidation: ASP.NET Core](https://docs.fluentvalidation.net/en/latest/aspnet.html)  
+[FluentValidation: Built-in Validators](https://docs.fluentvalidation.net/en/latest/built-in-validators.html)
 
 [🏠 To top](#overview)
 
