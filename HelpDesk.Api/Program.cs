@@ -14,6 +14,7 @@ using HelpDesk.Infrastructure.Data;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
+    .Enrich.WithMachineName()
     .WriteTo.Console()
     .CreateBootstrapLogger();
 
