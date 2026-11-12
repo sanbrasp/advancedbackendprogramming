@@ -8,20 +8,24 @@ public class GlobalExceptionHandler : IExceptionHandler
 {
     private readonly IProblemDetailsService _problemDetailsService;
     private readonly ILogger<GlobalExceptionHandler> _logger;
-    
+
     public GlobalExceptionHandler(IProblemDetailsService problemDetailsService, ILogger<GlobalExceptionHandler> logger)
     {
         _problemDetailsService = problemDetailsService;
         _logger = logger;
     }
-    
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
-    {
-        const int statusCode = StatusCodes.Status500InternalServerError;
 
-        httpContext.Response.StatusCode = statusCode;
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception,
+        CancellationToken cancellationToken)
+    {
+        var statusCode = exception is ArgumentNullException
+            ? StatusCodes.Status400BadRequest
+            : StatusCodes.Status500InternalServerError;
         
-        _logger.LogError(exception, "Error has occurred. Refer to this trace ID: {TraceId}", Activity.Current?.Id ?? httpContext.TraceIdentifier);
+        httpContext.Response.StatusCode = statusCode;
+
+        _logger.LogError(exception, "Error has occurred. Refer to this trace ID: {TraceId}",
+            Activity.Current?.Id ?? httpContext.TraceIdentifier);
 
         return await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
@@ -29,7 +33,9 @@ public class GlobalExceptionHandler : IExceptionHandler
             ProblemDetails = new ProblemDetails
             {
                 Status = StatusCodes.Status500InternalServerError,
-                Title = "An unexpected error occurred",
+                Title = statusCode == StatusCodes.Status400BadRequest
+                ? "A required value was missing"
+                : "An unexpected error has occurred"
             }
         });
     }
