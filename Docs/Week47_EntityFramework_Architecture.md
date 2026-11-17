@@ -9,6 +9,15 @@ Week 47 notes
 - [Week 45 (separate document)](../Docs/Week45_InfrastructureArchitecture.md)
 - [Week 46 (separate document)](../Docs/Week46_RobustApis.md)
 - [Week 47](#week-47)
+  - [What an ORM is, and EF Core vs raw SQL](#what-an-orm-is-what-ef-core-does-compared-with-raw-sql)
+  - [Entities, Data Annotations and the Fluent API](#define-an-entity-with-data-annotations-and-configure-relationship-with-the-fluent-api)
+  - [Code-First migrations](#create-and-run-a-code-first-migration-explain-what-happens-in-up)
+  - [Why not return entities from the API](#justify-why-i-should-not-return-entities-directly-from-api)
+  - [Mapping from entity to DTO](#implement-manual-mapping-from-entity-to-dto-in-service-layer)
+  - [DbContext, repository, service and controller with DI](#wire-dbcontext-repo-service-and-controller-together-with-dependency-injection)
+  - [async/await and AsNoTracking()](#use-async--await-and-asnotracking-in-all-read-operations)
+  - [Unit tests with a mocked repository](#write-unit-test-for-service-method-by-mocking-the-repo-interface)
+  - [Quick quiz](#quick-quiz)
 
 ---
 
@@ -20,7 +29,7 @@ Learning goals for this week:
 - [x] I can create and run a Code-First migration, and explain what happens in Up().
 - [x] I can justify why I should not return entities directly from the API.
 - [ ] I can implement manual mapping from entity to DTO in the service layer.
-- [x] I can wire DbContext, repository, service and controller together with dependency injection.
+- [ ] I can wire DbContext, repository, service and controller together with dependency injection.
 - [ ] I use async/await and AsNoTracking() in all read operations.
 - [ ] I can write a unit test for a service method by mocking the repository interface.
 
@@ -28,9 +37,51 @@ Learning goals for this week:
 
 ## What an ORM is, what EF Core does compared with raw SQL
 
-An ORM translates C# objects into database tables.
+An ORM (Object-Relational Mapper) translates between C# objects and database tables. I describe the data as C#
+classes, and the ORM writes the SQL. EF Core is Microsoft's ORM for .NET.
 
-Add more info here.
+**Without an ORM (raw SQL with ADO.NET),** fetching all products means:
+
+1. Open a connection.
+2. Write the SQL as a string.
+3. Loop over a `DataReader`.
+4. Copy each column into a new object, and add it to a list by hand.
+
+The SQL string is not checked when the code compiles, so a typo in a table or column name only shows up when it
+runs. The code is also tied tightly to the database structure.
+
+**With EF Core,** the same thing is one line:
+
+```csharp
+var products = await _context.Products.ToListAsync();
+```
+
+| | Raw SQL (ADO.NET) | EF Core |
+|---|---|---|
+| Queries | SQL strings, checked when the code runs | LINQ, checked by the compiler |
+| Results | Copied into objects by hand | Mapped to entities automatically |
+| Schema | Tables written and changed by hand | Created and changed with migrations |
+| Control | Full control over every query | EF Core decides the SQL |
+
+**What EF Core does for me:**
+
+- Translates LINQ to SQL. The query runs against the database, and the provider (Pomelo for MySQL) writes SQL for
+  that database.
+- Maps the result rows to entities.
+- Tracks changes to entities, so `SaveChangesAsync()` knows what to write back.
+- Creates and updates the schema with migrations. In this project it wrote the `CREATE TABLE` statements for me.
+
+**Code-First vs Database-First.** Code-First means I write the classes first and EF Core creates the tables. That
+is what this course uses. Database-First means EF Core generates the classes from a database that already
+exists.
+
+**EF Core is not always the right tool.** For very complex queries, bulk operations or performance-critical code,
+raw SQL through `FromSqlRaw`, or a lighter tool, can be a better fit.
+
+[Overview of Entity Framework Core](https://learn.microsoft.com/en-us/ef/core/)  
+[Querying Data](https://learn.microsoft.com/en-us/ef/core/querying/)
+
+[🏠 To top](#overview)
 
 ---
 
