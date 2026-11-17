@@ -30,7 +30,24 @@ The connection string is not in the repository. It is kept in user secrets.
 
 ## Project Structure
 
-To be filled.
+```text
+Shop.Core/                              What the shop's data is
+├── DTOs/
+│   ├── CategoryDto.cs                  What the API returns for a category
+│   ├── OrderItemDto.cs                 What the API returns for an order item
+│   └── ProductDto.cs                   What the API returns for a product
+└── Entities/
+    ├── Category.cs                     Category entity, with a list of products
+    ├── OrderItem.cs                    Order item entity
+    └── Product.cs                      Product entity, linked to one category
+
+Shop.Infrastructure/                    Database access
+└── Data/
+    └── AppDbContext.cs                 EF Core context: three DbSets and the Category-Product relationship
+
+Shop.Api/                               HTTP entry point and wiring
+└── Program.cs                          Registers AppDbContext with the MySQL provider
+```
 
 ---
 
