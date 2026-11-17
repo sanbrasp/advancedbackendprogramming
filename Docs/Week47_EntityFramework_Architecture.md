@@ -17,7 +17,7 @@ Week 47 notes
 Learning goals for this week:  
 - [x] I can explain what an ORM is, and what EF Core does for me compared with raw SQL.
 - [x] I can define an entity with Data Annotations and configure a relationship with the Fluent API.
-- [ ] I can create and run a Code-First migration, and explain what happens in Up().
+- [x] I can create and run a Code-First migration, and explain what happens in Up().
 - [x] I can justify why I should not return entities directly from the API.
 - [ ] I can implement manual mapping from entity to DTO in the service layer.
 - [x] I can wire DbContext, repository, service and controller together with dependency injection.
@@ -84,6 +84,68 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 ---
 
 ## Create and run a Code-First migration, explain what happens in `Up()`
+
+**Database.** I had no local MySQL server, and `ServerVersion.AutoDetect` connects to the database even during
+`migrations add`. So MySQL 8.4 runs in Docker, from `compose.yaml` in the solution folder. The passwords are in
+`.env` next to it, and `.env` is in `.gitignore`.
+
+- `MYSQL_DATABASE` creates `shopdb`, and `MYSQL_USER`/`MYSQL_PASSWORD` create a user with access to `shopdb`
+  only. The app uses that user, not root.
+- These variables are only read the first time the container starts with an empty volume. After a typo, I had to
+  remove the volume too: `docker compose down -v --remove-orphans`, then `docker compose up -d`.
+- The user secret must match `.env`. My first attempt failed with "Access denied", because the secret still held
+  the placeholder user.
+
+**Commands.** With separate projects, every command needs `--project` (where the migrations go: Infrastructure,
+next to `AppDbContext`) and `--startup-project` (the Api, which has `Program.cs` and the user secret):
+
+```powershell
+dotnet ef migrations add InitialCreate --project Shop.Infrastructure --startup-project Shop.Api
+dotnet ef migrations script --project Shop.Infrastructure --startup-project Shop.Api
+dotnet ef migrations add AddStockQuantity --project Shop.Infrastructure --startup-project Shop.Api
+dotnet ef database update --project Shop.Infrastructure --startup-project Shop.Api
+```
+
+`dotnet-ef` and `Microsoft.EntityFrameworkCore.Design` (in Shop.Api) are both version 9.0.23, to match EF Core 9.
+
+**InitialCreate.**
+
+- `Up()` creates the tables with their columns and rules, such as `NOT NULL` and max lengths. It sets the
+  primary keys, adds the foreign key from `Products.CategoryId` to `Categories`, and creates an index on
+  `CategoryId`.
+- `Down()` undoes `Up()`: it drops the tables. `Products` goes before `Categories`, because of the foreign key.
+- `migrations script` shows the SQL that `Up()` turns into: `CREATE TABLE`, `CREATE INDEX` and so on.
+
+**AddStockQuantity.** The new migration only holds the change. EF Core compares the entities with
+`AppDbContextModelSnapshot.cs` and finds the difference.
+
+- `Up()` adds `StockQuantity` to `Products` as `int NOT NULL DEFAULT 0`. The default exists so rows already in
+  the table get a value.
+- `Down()` drops the column again.
+
+**Running them.** `database update` ran both migrations and recorded each one in `__EFMigrationsHistory`. That
+table is how EF Core knows which migrations are new. `Down()` runs when the database is rolled back, for
+example with `dotnet ef database update InitialCreate`, or `dotnet ef database update 0` to undo everything.
+
+Things I noticed in the SQL:
+
+- The foreign key has `ON DELETE CASCADE`. `CategoryId` is a non-nullable `int`, so the relationship is
+  required, and deleting a category also deletes its products.
+- `decimal` became `decimal(65,30)`, because no precision was set.
+
+Checked inside the container:
+
+```powershell
+docker exec -it shop-mysql mysql -u user -p shopdb -e "SHOW TABLES; DESCRIBE Products;"
+```
+
+[Migrations Overview](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/)  
+[Managing Migrations](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/managing)  
+[EF Core tools reference (.NET CLI)](https://learn.microsoft.com/en-us/ef/core/cli/dotnet)  
+[mysql - Official Image on Docker Hub](https://hub.docker.com/_/mysql)  
+[docker compose down](https://docs.docker.com/reference/cli/docker/compose/down.md)
+
+[🏠 To top](#overview)
 
 ---
 

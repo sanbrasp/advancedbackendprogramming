@@ -42,7 +42,8 @@ Shop.Core/                              What the shop's data is
     └── Product.cs                      Product entity, linked to one category
 
 Shop.Infrastructure/                    Database access
-└── Data/
+├── Data/
+└── Migrations/                         The two migrations and the model snapshot
     └── AppDbContext.cs                 EF Core context: three DbSets and the Category-Product relationship
 
 Shop.Api/                               HTTP entry point and wiring
@@ -71,7 +72,21 @@ To be filled.
 
 ## Migrations
 
-To be filled.
+The database is MySQL 8.4 in Docker. `compose.yaml` is in the solution folder, and the passwords are in `.env`,
+which is not in the repository.
+
+To set up the database from scratch:
+
+```powershell
+docker compose up -d
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "server=localhost;port=3306;database=shopdb;user=<MYSQL_USER>;password=<MYSQL_PASSWORD>" --project Shop.Api
+dotnet ef database update --project Shop.Infrastructure --startup-project Shop.Api
+```
+
+| Migration | What it does |
+|---|---|
+| `InitialCreate` | Creates `Categories`, `Products` and `OrderItems`, with the Category-Product foreign key |
+| `AddStockQuantity` | Adds `StockQuantity` to `Products` |
 
 ---
 
