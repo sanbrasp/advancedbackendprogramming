@@ -7,5 +7,8 @@
   <Project Path="HelpDesk.Core/HelpDesk.Core.csproj" />
   <Project Path="HelpDesk.Infrastructure/HelpDesk.Infrastructure.csproj" />
   <Project Path="HelpDesk.Tests/HelpDesk.Tests.csproj" />
+  <Project Path="Shop.Api/Shop.Api.csproj" />
+  <Project Path="Shop.Core/Shop.Core.csproj" />
+  <Project Path="Shop.Infrastructure/Shop.Infrastructure.csproj" />
   <Project Path="WebApiBasics/WebApiBasics.csproj" />
 </Solution>
