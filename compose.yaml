@@ -1,0 +1,16 @@
+services:
+  mysql:
+    image: mysql:8.4                                # long-term, stable release
+    container_name: show-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}   # values come from .env
+      MYSQL_DATABASE: shopdb                        # created on first start
+      MYSQL_USER: ${MYSQL_USER}                     # full access to shopdb
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"                                 # localhost:3306
+    volumes:
+      - shop-mysql-data:/var/lib/mysql              # keeps data when container is removed
+
+volumes:
+  shop-mysql-data:
