@@ -43,10 +43,17 @@ HelpDesk.Tests/                     xUnit integration tests for the API
 Shop.Core/                          What the shop's data is
 ├── DTOs/                           ProductDto, CategoryDto, OrderItemDto
 └── Entities/                       Product, Category, OrderItem
+├── Interfaces/
+│   ├── IProductRepository.cs           Contract for reading products from the database
+│   └── IProductService.cs              Contract for the product service, returns DTOs
+├── Services/
+│   └── ProductService.cs               Calls the repository and maps products to DTOs
 
 Shop.Infrastructure/                Database access with EF Core and MySQL
 ├── Data/                           AppDbContext
 └── Migrations/                     InitialCreate, AddStockQuantity and the model snapshot
+├── Repositories/
+│   └── ProductRepository.cs            Reads products with EF Core, returns entities
 
 Shop.Api/                           HTTP entry point and wiring
 └── Program.cs                      Registers AppDbContext with the MySQL provider

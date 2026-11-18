@@ -228,6 +228,57 @@ public record OrderItemDto(int Id, int ProductId, int Quantity, decimal UnitPric
 
 ## Implement manual mapping from entity to DTO in service layer
 
+The data flows one way: the repository returns **entities**, and the service maps them to **DTOs**. The
+controller only ever sees DTOs.
+
+**Repository.** `IProductRepository` lives in `Shop.Core/Interfaces`, and `ProductRepository` lives in
+`Shop.Infrastructure/Repositories`. Both are `public`, because other projects implement or register them.
+
+```csharp
+public async Task<IEnumerable<Product>> GetAllAsync()
+{
+    return await _dbContext.Products.AsNoTracking().ToListAsync();
+}
+
+public async Task<Product?> GetByIdAsync(int id)
+{
+    return await _dbContext.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+}
+```
+
+- `AppDbContext` comes in through the constructor and is kept in a `private readonly` field. Nothing outside the
+  repository should reach the context.
+- `Product?` means "a product, or `null` if no product has that id".
+- The theory page uses `FindAsync` for get-by-id, but `FindAsync` cannot be combined with `AsNoTracking()`.
+  `FirstOrDefaultAsync` can.
+
+**Service.** `IProductService` lives in `Shop.Core/Interfaces`, and `ProductService` lives in
+`Shop.Core/Services`. The service depends on the repository **interface**, not the class, so it can be mocked in
+tests.
+
+```csharp
+public async Task<IEnumerable<ProductDto>> GetAllAsync()
+{
+    var products = await _productRepository.GetAllAsync();
+
+    return products.Select(p => new ProductDto(p.Id, p.Name, p.Price, p.CategoryId));
+}
+
+public async Task<ProductDto?> GetProductAsync(int id)
+    {
+        var result = await _productRepository.GetByIdAsync(id);
+        
+        return result == null ? null : new ProductDto(result.Id, result.Name, result.Price, result.CategoryId);
+    }
+```
+
+- The mapping is manual: one `new ProductDto(...)` per entity. `Select` does it for every item in a list.
+- My first version created the DTOs in a `foreach` loop but never kept or returned them.
+
+[Designing the infrastructure persistence layer](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/infrastructure-persistence-layer-design)
+
+[🏠 To top](#overview)
+
 ---
 
 ## Wire DbContext, repo, service and controller together with dependency injection
@@ -286,6 +337,22 @@ but I installed `MySqlConnector` 2.6.1, the patched version, to fix it. Pomelo o
 ---
 
 ## Use async / await and AsNoTracking() in all read operations
+
+A database call is I/O-bound: the server waits for the database. With `await`, the thread is freed to serve
+other requests while it waits. With a blocking call, it sits idle.
+
+- A method that uses `await` needs `async` in its signature, and returns `Task<T>`.
+- EF Core's async methods do the database work: `ToListAsync`, `FirstOrDefaultAsync`, `SaveChangesAsync`. They
+  need `using Microsoft.EntityFrameworkCore;`.
+- **Never `.Result`.** My first service used `_productRepository.GetAllAsync().Result`, which blocks the thread
+  until the database answers. That is exactly what `async` is there to avoid.
+- `AsNoTracking()` on every read. EF Core skips change tracking for those entities, which saves time and memory.
+  The repository only reads, so both methods use it.
+
+[Asynchronous programming scenarios](https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios)  
+[Efficient Querying](https://learn.microsoft.com/en-us/ef/core/performance/efficient-querying)
+
+[🏠 To top](#overview)
 
 ---
 
