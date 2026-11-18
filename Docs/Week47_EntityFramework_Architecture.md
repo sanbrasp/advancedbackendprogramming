@@ -28,9 +28,9 @@ Learning goals for this week:
 - [x] I can define an entity with Data Annotations and configure a relationship with the Fluent API.
 - [x] I can create and run a Code-First migration, and explain what happens in Up().
 - [x] I can justify why I should not return entities directly from the API.
-- [ ] I can implement manual mapping from entity to DTO in the service layer.
-- [ ] I can wire DbContext, repository, service and controller together with dependency injection.
-- [ ] I use async/await and AsNoTracking() in all read operations.
+- [x] I can implement manual mapping from entity to DTO in the service layer.
+- [x] I can wire DbContext, repository, service and controller together with dependency injection.
+- [x] I use async/await and AsNoTracking() in all read operations.
 - [ ] I can write a unit test for a service method by mocking the repository interface.
 
 ---
