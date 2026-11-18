@@ -56,6 +56,9 @@ Shop.Infrastructure/                Database access with EF Core and MySQL
 │   └── ProductRepository.cs            Reads products with EF Core, returns entities
 
 Shop.Api/                           HTTP entry point and wiring
+├── Controllers/
+│   └── ProductsController.cs           GET all products and GET one product by id
+├── Shop.Api.http                       Test requests for the two endpoints
 └── Program.cs                      Registers AppDbContext with the MySQL provider
 ```
 

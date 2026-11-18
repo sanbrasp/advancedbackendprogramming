@@ -58,15 +58,52 @@ To be filled.
 
 ### Endpoints
 
-To be filled.
+Base route: `api/products`
+
+| Method | Path | Purpose | Success | Errors |
+|---|---|---|---|---|
+| GET | `/api/products` | List all products | 200 | N/A |
+| GET | `/api/products/{id}` | Get one product | 200 | 404 |
+
+- Both endpoints return `ProductDto`, never the entity.
+- The database runs in Docker, so the container must be running: `docker compose up -d`.
 
 ### Data Flow
 
-To be filled.
+```mermaid
+flowchart LR
+  C[Client] --> T[ProductsController]
+  T --> S[IProductService]
+  S --> PS[ProductService]
+  PS --> R[IProductRepository]
+  R --> PR[ProductRepository]
+  PR --> X[AppDbContext]
+  X --> D[(MySQL in Docker)]
+  D --> X
+  X --> PR
+  PR -- "Product entities" --> PS
+  PS -- "ProductDto" --> T
+  T --> C
+```
+
+- The repository returns entities, and the service maps them to DTOs. The controller only sees DTOs.
+- Each layer depends on an interface, not a class. The DI container creates the objects and passes them in.
+- `AppDbContext`, the repository and the service are all scoped: one instance each per request.
 
 ### Layers
 
-To be filled.
+| Project | Responsibility | References |
+|---|---|---|
+| `Shop.Core` | Entities, DTOs, the interfaces and the service with the mapping. Knows nothing about EF Core or HTTP. | Nothing |
+| `Shop.Infrastructure` | `AppDbContext`, migrations and `ProductRepository`. Implements Core's repository interface. | Core |
+| `Shop.Api` | `ProductsController` and `Program.cs`, where everything is registered. | Core, Infrastructure |
+
+```mermaid
+flowchart LR
+  Api[Shop.Api] --> Core[Shop.Core]
+  Api --> Infra[Shop.Infrastructure]
+  Infra --> Core
+```
 
 ---
 

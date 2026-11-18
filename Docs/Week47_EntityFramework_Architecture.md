@@ -321,6 +321,77 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 - `AddDbContext` registers the context as scoped: one instance per HTTP request.
 - The `?? throw` stops the app at startup with a clear message if the connection string is missing.
 
+**Repository and service (Stage 5).** Registered after `AddDbContext`:
+
+```csharp
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductService, ProductService>();
+```
+
+- Interface first, class second: "when someone asks for `IProductService`, make a `ProductService`".
+- Scoped, because both depend on `AppDbContext`, which is scoped. A singleton must not depend on a scoped service.
+
+**What the DI container is.** `builder.Services` is the list of registrations. `var app = builder.Build();`
+turns that list into the container, an `IServiceProvider` object that lives in `app.Services` while the app runs.
+There is no file or class for it in my code.
+
+When `GET /api/products` comes in:
+
+1. ASP.NET Core asks the container for a `ProductsController`.
+2. Its constructor wants an `IProductService`, so the container makes a `ProductService`.
+3. That one wants an `IProductRepository`, so it makes a `ProductRepository`.
+4. That one wants an `AppDbContext`, so it makes one with the MySQL options.
+5. It passes each object into the next constructor. I never write `new ProductService(...)` myself.
+
+Scoped instances are kept for one request and thrown away when it ends. Singletons are kept for as long as the
+app runs. Transient ones are never kept: a new one is made every time.
+
+**Controller.** `ProductsController` lives in `Shop.Api/Controllers`. It is `public`, because ASP.NET Core only
+finds public controllers, and it only knows `IProductService`, never the repository or the context.
+
+```csharp
+[HttpGet]
+public async Task<IActionResult> GetAll()
+{
+    var products = await _productService.GetAllAsync();
+
+    return Ok(products);
+}
+
+[HttpGet("{id}")]
+public async Task<IActionResult> GetById(int id)
+{
+    var product = await _productService.GetProductAsync(id);
+    if (product is null)
+        return NotFound();
+
+    return Ok(product);
+}
+```
+
+- `return product is null ? NotFound() : Ok(product);` works too. Since C# 9, the conditional takes its type from
+  the return type, `IActionResult`, even though the two branches return different result types.
+- My first version returned `Ok(_productService.GetAllAsync())` without `await`. That sends the unfinished
+  `Task` to the client, not the products.
+
+**Result.**
+
+- `GET /api/products` returned `200` with `[]`, since the tables are empty. That proves the whole chain works:
+  controller, service, repository, EF Core, MySQL.
+- `GET /api/products/1` returned `404` as Problem Details with a `traceId`. `[ApiController]` turns a bare
+  `NotFound()` into that format.
+- The first call gave `500`: "Unable to connect to any of the specified MySQL hosts". The Docker container was
+  stopped after a restart. `docker compose up -d` fixed it.
+
+**Discussion: DbContext as a singleton instead of scoped.** One context would be shared by every request for as
+long as the app runs.
+
+- `DbContext` is not thread-safe, so two requests using it at the same time make EF Core throw an exception.
+- The change tracker would keep every entity it has loaded, so memory keeps growing.
+- Tracked entities can be returned from memory instead of being re-read, so the data can be stale.
+
+Scoped avoids all three: each request gets its own fresh context, which is disposed when the request ends.
+
 **Packages.** `Pomelo.EntityFrameworkCore.MySql` 9.0.0 is the provider, and it needs EF Core 9.0.x. The project
 still targets .NET 10. Pomelo brought `MySqlConnector` 2.4.0, which gave warning NU1902: a known vulnerability
 where the password can leak to a man-in-the-middle with certain TLS settings. Local connections are not affected,
@@ -331,8 +402,10 @@ but I installed `MySqlConnector` 2.6.1, the patched version, to fix it. Pomelo o
 [Safe storage of app secrets in development in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0)  
 [Pomelo.EntityFrameworkCore.MySql on NuGet](https://www.nuget.org/packages/Pomelo.EntityFrameworkCore.MySql)  
 [GHSA-473q-m89c-ghf8: MySqlConnector password disclosure](https://github.com/advisories/GHSA-473q-m89c-ghf8)
+[?: operator - C# reference](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/conditional-operator)
 
 [🏠 To top](#overview)
+
 
 ---
 
