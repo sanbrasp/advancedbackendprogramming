@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Product>()
             .HasOne(p => p.Category)        // a product has one category
             .WithMany(c => c.Products)      // a category has many products
-            .HasForeignKey(p => p.CategoryId);
+            .HasForeignKey(p => p.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
