@@ -1,6 +1,10 @@
-@Shop.Api_HostAddress = http://localhost:5282
+@host = http://localhost:5282
 
-GET {{Shop.Api_HostAddress}}/weatherforecast/
+
+### GET all products
+GET {{host}}/api/Products/
 Accept: application/json
 
-###
+### GET a product by ID
+GET {{host}}/api/Products/1
+Accept: application/json
