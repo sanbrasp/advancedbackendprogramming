@@ -10,5 +10,6 @@
   <Project Path="Shop.Api/Shop.Api.csproj" />
   <Project Path="Shop.Core/Shop.Core.csproj" />
   <Project Path="Shop.Infrastructure/Shop.Infrastructure.csproj" />
+  <Project Path="Shop.Tests/Shop.Tests.csproj" />
   <Project Path="WebApiBasics/WebApiBasics.csproj" />
 </Solution>
