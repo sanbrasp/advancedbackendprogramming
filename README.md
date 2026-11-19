@@ -40,26 +40,24 @@ HelpDesk.Tests/                     xUnit integration tests for the API
 ├── HelpDeskApiFactory.cs           Starts the API in memory with a test API key
 └── TicketsApiTests.cs              Three integration tests
 
-Shop.Core/                          What the shop's data is
+Shop.Core/                          What the shop's data is, and what the app does with it
 ├── DTOs/                           ProductDto, CategoryDto, OrderItemDto
-└── Entities/                       Product, Category, OrderItem
-├── Interfaces/
-│   ├── IProductRepository.cs           Contract for reading products from the database
-│   └── IProductService.cs              Contract for the product service, returns DTOs
-├── Services/
-│   └── ProductService.cs               Calls the repository and maps products to DTOs
+├── Entities/                       Product, Category, OrderItem
+├── Interfaces/                     IProductRepository, IProductService
+└── Services/                       ProductService (calls the repository, maps to DTOs)
 
 Shop.Infrastructure/                Database access with EF Core and MySQL
 ├── Data/                           AppDbContext
-└── Migrations/                     InitialCreate, AddStockQuantity and the model snapshot
-├── Repositories/
-│   └── ProductRepository.cs            Reads products with EF Core, returns entities
+├── Migrations/                     InitialCreate, AddStockQuantity and the model snapshot
+└── Repositories/                   ProductRepository
 
 Shop.Api/                           HTTP entry point and wiring
-├── Controllers/
-│   └── ProductsController.cs           GET all products and GET one product by id
-├── Shop.Api.http                       Test requests for the two endpoints
-└── Program.cs                      Registers AppDbContext with the MySQL provider
+├── Controllers/                    ProductsController
+├── Program.cs                      Registers AppDbContext, the repository and the service
+└── Shop.Api.http                   Test requests for the two endpoints
+
+Shop.Tests/                         xUnit unit tests for the service, with Moq
+└── ProductServiceTests.cs          Three unit tests
 ```
 
 ---
@@ -74,6 +72,8 @@ Shop.Api/                           HTTP entry point and wiring
 | EF Core      | ORM that maps C# classes to database tables          |
 | MySQL        | Relational database, run in Docker                   |
 | Docker       | Runs the MySQL server in a container                 |
+| xUnit        | Test framework for the unit and integration tests    |
+| Moq          | Library for creating fake objects in unit tests      |
 
 
 ## Requirements
@@ -119,6 +119,7 @@ dotnet ef database update --project Shop.Infrastructure --startup-project Shop.A
 ```bash
 dotnet build
 dotnet run --project Shop.Api
+dotnet test Shop.Tests
 ```
 
 ---

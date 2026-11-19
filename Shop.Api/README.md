@@ -31,30 +31,49 @@ The connection string is not in the repository. It is kept in user secrets.
 ## Project Structure
 
 ```text
-Shop.Core/                              What the shop's data is
+Shop.Core/                              What the shop's data is, and what the app does with it
 ├── DTOs/
 │   ├── CategoryDto.cs                  What the API returns for a category
 │   ├── OrderItemDto.cs                 What the API returns for an order item
 │   └── ProductDto.cs                   What the API returns for a product
-└── Entities/
-    ├── Category.cs                     Category entity, with a list of products
-    ├── OrderItem.cs                    Order item entity
-    └── Product.cs                      Product entity, linked to one category
+├── Entities/
+│   ├── Category.cs                     Category entity, with a list of products
+│   ├── OrderItem.cs                    Order item entity
+│   └── Product.cs                      Product entity, linked to one category
+├── Interfaces/
+│   ├── IProductRepository.cs           Contract for reading products from the database
+│   └── IProductService.cs              Contract for the product service, returns DTOs
+└── Services/
+    └── ProductService.cs               Calls the repository and maps products to DTOs
 
 Shop.Infrastructure/                    Database access
 ├── Data/
-└── Migrations/                         The two migrations and the model snapshot
-    └── AppDbContext.cs                 EF Core context: three DbSets and the Category-Product relationship
+│   └── AppDbContext.cs                 EF Core context: three DbSets and the Category-Product relationship
+├── Migrations/                         The two migrations and the model snapshot
+└── Repositories/
+    └── ProductRepository.cs            Reads products with EF Core, returns entities
 
 Shop.Api/                               HTTP entry point and wiring
-└── Program.cs                          Registers AppDbContext with the MySQL provider
+├── Controllers/
+│   └── ProductsController.cs           GET all products and GET one product by id
+├── Program.cs                          Registers AppDbContext, the repository and the service
+└── Shop.Api.http                       Test requests for the two endpoints
+
+Shop.Tests/                             xUnit unit tests for the service, with Moq
+└── ProductServiceTests.cs              Three tests: count of DTOs, correct DTO, null when not found
 ```
 
 ---
 
 ## Shop API
 
-To be filled.
+A product has an `id`, a `name`, a `price`, a `categoryId` and a `stockQuantity`. Each product belongs to one
+category, and a category can have many products.
+
+The API returns `ProductDto`, which has `id`, `name`, `price` and `categoryId`. The `Category` navigation
+property is left out, to avoid circular references in the JSON.
+
+---
 
 ### Endpoints
 
@@ -97,12 +116,14 @@ flowchart LR
 | `Shop.Core` | Entities, DTOs, the interfaces and the service with the mapping. Knows nothing about EF Core or HTTP. | Nothing |
 | `Shop.Infrastructure` | `AppDbContext`, migrations and `ProductRepository`. Implements Core's repository interface. | Core |
 | `Shop.Api` | `ProductsController` and `Program.cs`, where everything is registered. | Core, Infrastructure |
+| `Shop.Tests` | Unit tests for the service, with a mocked repository. | Core |
 
 ```mermaid
 flowchart LR
   Api[Shop.Api] --> Core[Shop.Core]
   Api --> Infra[Shop.Infrastructure]
   Infra --> Core
+  Tests[Shop.Tests] --> Core
 ```
 
 ---
@@ -129,10 +150,33 @@ dotnet ef database update --project Shop.Infrastructure --startup-project Shop.A
 
 ## Tests
 
-To be filled.
+`Shop.Tests` holds unit tests for `ProductService`. The repository is replaced by a Moq mock, so the tests need
+no database and no running API.
+
+```bash
+dotnet test Shop.Tests
+```
+
+| Test | Checks |
+|---|---|
+| `GetAllAsync_ReturnsThreeDtos_WhenRepositoryReturnsThreeProducts` | Three entities become three DTOs |
+| `GetProductAsync_ReturnsCorrectDto_WhenProductExists` | The DTO gets the right values |
+| `GetProductAsync_ReturnsNull_WhenRepositoryReturnsNull` | A missing product gives `null` |
 
 ---
 
 ## Sources
 
-To be filled.
+[Overview of Entity Framework Core](https://learn.microsoft.com/en-us/ef/core/)  
+[Creating and Configuring a Model](https://learn.microsoft.com/en-us/ef/core/modeling/)  
+[One-to-many relationships](https://learn.microsoft.com/en-us/ef/core/modeling/relationships/one-to-many)  
+[DbContext Lifetime, Configuration, and Initialization](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/)  
+[Migrations Overview](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/)  
+[EF Core tools reference (.NET CLI)](https://learn.microsoft.com/en-us/ef/core/cli/dotnet)  
+[Efficient Querying](https://learn.microsoft.com/en-us/ef/core/performance/efficient-querying)  
+[Dependency injection in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-10.0)  
+[Safe storage of app secrets in development in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0)  
+[Asynchronous programming scenarios](https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios)  
+[Pomelo.EntityFrameworkCore.MySql on GitHub](https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql)  
+[mysql - Official Image on Docker Hub](https://hub.docker.com/_/mysql)  
+[Moq Quickstart](https://github.com/moq/moq4/wiki/quickstart)

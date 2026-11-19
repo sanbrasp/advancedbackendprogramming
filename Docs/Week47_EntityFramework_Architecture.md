@@ -31,7 +31,7 @@ Learning goals for this week:
 - [x] I can implement manual mapping from entity to DTO in the service layer.
 - [x] I can wire DbContext, repository, service and controller together with dependency injection.
 - [x] I use async/await and AsNoTracking() in all read operations.
-- [ ] I can write a unit test for a service method by mocking the repository interface.
+- [x] I can write a unit test for a service method by mocking the repository interface.
 
 ---
 
@@ -266,9 +266,9 @@ public async Task<IEnumerable<ProductDto>> GetAllAsync()
 
 public async Task<ProductDto?> GetProductAsync(int id)
     {
-        var result = await _productRepository.GetByIdAsync(id);
+      var result = await _productRepository.GetByIdAsync(id);
         
-        return result == null ? null : new ProductDto(result.Id, result.Name, result.Price, result.CategoryId);
+      return result == null ? null : new ProductDto(result.Id, result.Name, result.Price, result.CategoryId);
     }
 ```
 
@@ -401,7 +401,7 @@ but I installed `MySqlConnector` 2.6.1, the patched version, to fix it. Pomelo o
 [One-to-many relationships](https://learn.microsoft.com/en-us/ef/core/modeling/relationships/one-to-many)  
 [Safe storage of app secrets in development in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0)  
 [Pomelo.EntityFrameworkCore.MySql on NuGet](https://www.nuget.org/packages/Pomelo.EntityFrameworkCore.MySql)  
-[GHSA-473q-m89c-ghf8: MySqlConnector password disclosure](https://github.com/advisories/GHSA-473q-m89c-ghf8)
+[GHSA-473q-m89c-ghf8: MySqlConnector password disclosure](https://github.com/advisories/GHSA-473q-m89c-ghf8)  
 [?: operator - C# reference](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/conditional-operator)
 
 [🏠 To top](#overview)
@@ -431,11 +431,89 @@ other requests while it waits. With a blocking call, it sits idle.
 
 ## Write unit test for service method by mocking the repo interface
 
+`Shop.Tests` is an xUnit project that references `Shop.Core` only, and uses the package `Moq`. These are **unit
+tests**: no `WebApplicationFactory`, no HTTP and no database. Each test creates `ProductService` itself and passes
+in a fake repository.
+
+```csharp
+var mockRepo = new Mock<IProductRepository>();
+mockRepo.Setup(r => r.GetAllAsync())
+    .ReturnsAsync(new List<Product>
+    {
+        new Product { Id = 1, Name = "Pen", Price = 100, CategoryId = 1, StockQuantity = 50 },
+        new Product { Id = 2, Name = "Apple", Price = 200, CategoryId = 2, StockQuantity = 150 },
+        new Product { Id = 3, Name = "Apple Pen", Price = 300, CategoryId = 3, StockQuantity = 12 },
+    });
+var service = new ProductService(mockRepo.Object);
+```
+
+- `new Mock<IProductRepository>()` makes Moq build a class that implements the interface.
+- `Setup(...).ReturnsAsync(...)` decides what a method returns. The mock only answers what has been set up.
+- `mockRepo.Object` is the fake repository itself, passed in instead of a real one.
+- This only works because `ProductService` depends on the **interface**. A service that created its own
+  repository with `new` could not be tested without a database.
+
+| Test | Setup | Checks |
+|---|---|---|
+| `GetAllAsync_ReturnsThreeDtos_WhenRepositoryReturnsThreeProducts` | `GetAllAsync()` returns three products | The result has three DTOs |
+| `GetProductAsync_ReturnsCorrectDto_WhenProductExists` | `GetByIdAsync(1)` returns one product | The DTO has the same `Id`, `Name`, `Price` and `CategoryId` |
+| `GetProductAsync_ReturnsNull_WhenRepositoryReturnsNull` | `GetByIdAsync(99)` returns `null` | The result is `null` |
+
+- `(Product?)null` tells the compiler which type the `null` is. A plain `null` is ambiguous, because
+  `ReturnsAsync` has several versions.
+- A whole number like `Price = 100` converts to `decimal` by itself. A number with a decimal point needs the `m`
+  suffix, like `99.5m`, or it is a `double`.
+- Moq is called a mocking library, but here the fake only returns data, and the asserts check the service's
+  result. In the strict terms from last week, that makes it a stub.
+
+**Result:** all three tests pass (19 Nov).
+
+[Moq Quickstart](https://github.com/moq/moq4/wiki/quickstart)  
+[Best practices for writing unit tests - .NET](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
+
+[🏠 To top](#overview)
+
 ---
 
 ## Quick quiz
-From the summary page. Answered in my own words when the stages are done.
-1.  A UserEntity has a PasswordHash field. What do I risk if I return it directly from an API endpoint?
-2.  What is the difference between the Scoped, Transient and Singleton lifetimes in DI? Which one is used for DbContext, and why?
-3.  I add a new field to an entity and run dotnet ef database update, but nothing changes in the database. What is the most likely cause?
-4.  What is the N+1 problem, and how does Include() solve it?
+
+From the summary page, answered when the stages were done.
+
+**1. A `UserEntity` has a `PasswordHash` field. What do I risk if I return it directly from an API endpoint?**
+
+The hash is sent to every client that calls the endpoint. An attacker can then try to crack it offline, with no
+limit on attempts. Returning the entity also exposes the database structure and ties the API to the schema. The
+fix is a DTO that leaves `PasswordHash` out.
+
+**2. What is the difference between the Scoped, Transient and Singleton lifetimes in DI? Which one is used for
+`DbContext`, and why?**
+
+| Lifetime | Instances |
+|---|---|
+| Transient | A new one every time it is asked for |
+| Scoped | One per HTTP request |
+| Singleton | One for as long as the app runs |
+
+`DbContext` is scoped. It is not thread-safe, so it must not be shared between requests, and its change tracker
+should start empty for each request. As a singleton, it would crash under load, keep growing in memory and
+return stale data.
+
+**3. I add a new field to an entity and run `dotnet ef database update`, but nothing changes in the database. What
+is the most likely cause?**
+
+I forgot to create a migration first. `database update` only runs migrations that already exist and have not been
+applied. The new field needs `dotnet ef migrations add <Name>` first, the way `StockQuantity` needed
+`AddStockQuantity`.
+
+**4. What is the N+1 problem, and how does `Include()` solve it?**
+
+One query loads a list of N items, and then one extra query runs for each item to load its related data. That is
+N+1 queries instead of one. For example, 100 products followed by 100 separate queries for their categories.
+`Include()` loads the related data together with the main query (eager loading), for example
+`_context.Products.Include(p => p.Category)`. Without `Include()`, the navigation property stays `null`, since
+Web API does not use lazy loading by default.
+
+[Efficient Querying](https://learn.microsoft.com/en-us/ef/core/performance/efficient-querying)  
+[DbContext Lifetime, Configuration, and Initialization](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/)
+
+[🏠 To top](#overview)
